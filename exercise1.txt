@@ -1,5 +1,0 @@
-In many cases, we tell things to the computer by pressing
-keys on the keyboard. In the first exercise, you need to
-press the marked key as quickly as you can.
-
-Press "Enter" to begin.
