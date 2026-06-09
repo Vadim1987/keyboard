@@ -19,12 +19,14 @@ dofile("notch.lua")
 dofile("scene.lua")
 dofile("input.lua")
 dofile("help.lua")
+dofile("cfcore.lua")
 dofile("intro.lua")
 dofile("menu.lua")
 
 -- Games present in this build (lazy-loaded). Adding a slice
 -- registers its file here; the menu picks it up structurally.
 SCENE_FILE.choose = "choose.lua"
+SCENE_FILE.find = "find.lua"
 
 notchInit()
 inputInit()

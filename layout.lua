@@ -22,6 +22,7 @@ FONT_PATH = "assets/fonts/SarasaGothicJ-Bold.ttf"
 -- Semantic UI font sizes (reference pixels).
 FONT_HEAD = 60
 FONT_BIG = 72
+FONT_TARGET_BIG = 80
 FONT_MENU = 34
 FONT_STATUS = 24
 FONT_COUNT = 22

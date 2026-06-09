@@ -30,6 +30,9 @@ LOCALE.en = {
   help = {
     choose = "Press the key that glows.\n\n"
       .. "Shift+Esc  back to the menu\n"
+      .. "Ctrl+Alt+↓  make it easier",
+    find = "Find the key shown above, then press it.\n\n"
+      .. "Shift+Esc  back to the menu\n"
       .. "Ctrl+Alt+↓  make it easier"
   }
 }
