@@ -12,7 +12,7 @@ function introEnter()
   INTRO.t = 0
   INTRO.idx = 0
   INTRO.simcaps = true
-  SOUND.knock()
+  SOUND.typeTick()
 end
 
 function introFinish()
@@ -27,7 +27,7 @@ function introNextLetter()
   if INTRO.idx > #WELCOME.heading then
     introFinish()
   else
-    SOUND.knock()
+    SOUND.typeTick()
   end
 end
 
@@ -87,19 +87,44 @@ function introDeco()
   return deco
 end
 
-function introDrawStatus()
-  if INTRO.phase ~= "ready" then return end
-  if WELCOME.line ~= "" then
-    local band = { STATUS_Y0, STATUS_Y0 + 26 }
-    drawBandText(WELCOME.line, band, UIFONT.status, COL_DIM)
+-- Welcome text wraps to several lines if needed; the author
+-- keeps it short (spec: a short line, no scrolling).
+function introWelcomeLines(font)
+  return select(2, font:getWrap(STR.welcome, REF_W - 120))
+end
+
+function introDrawWelcome(font, top)
+  gfx.setFont(font)
+  gfx.setColor(COL_DIM)
+  gfx.printf(STR.welcome, 60, top, REF_W - 120, "center")
+end
+
+-- At the prompt stage the welcome sits above Press Enter only
+-- if both fit the status band; otherwise the prompt wins.
+function introDrawReady(font, wh, band)
+  local lh = font:getHeight()
+  if wh + lh <= band then
+    introDrawWelcome(font, STATUS_Y0)
   end
-  local pband = { STATUS_Y0 + 28, STATUS_Y1 }
-  drawBandText(WELCOME.prompt, pband, UIFONT.status, COL_TEXT)
+  gfx.setFont(font)
+  gfx.setColor(COL_TEXT)
+  gfx.printf(STR.prompt, 0, STATUS_Y1 - lh, REF_W, "center")
+end
+
+function introDrawStatus()
+  local font = getFont(FONT_STATUS)
+  local wh = #introWelcomeLines(font) * font:getHeight()
+  local band = STATUS_Y1 - STATUS_Y0
+  if INTRO.phase == "ready" then
+    introDrawReady(font, wh, band)
+  else
+    introDrawWelcome(font, STATUS_Y0 + (band - wh) / 2)
+  end
 end
 
 function introDraw()
   drawBandText(introSpaced(INTRO.idx), HEADER_BAND,
-    UIFONT.head, COL_TEXT)
+    getFont(FONT_HEAD), COL_TEXT)
   drawKeyboard(introDeco())
   drawIndicators(INTRO.simcaps or CAPS_STATE.on)
   introDrawStatus()

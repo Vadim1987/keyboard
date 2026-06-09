@@ -29,6 +29,12 @@ function modHeld(a, b)
   return false
 end
 
+function isMod(k)
+  return k == "lshift" or k == "rshift"
+    or k == "lctrl" or k == "rctrl"
+    or k == "lalt" or k == "ralt"
+end
+
 function inputUpdateMods()
   INPUT.shift = modHeld("lshift", "rshift")
   INPUT.ctrl = modHeld("lctrl", "rctrl")
@@ -70,6 +76,12 @@ function appKeypressed(k)
   INPUT.held[k] = true
   inputUpdateMods()
   if reservedChord(k) then return end
+  if k == "h" and INPUT.alt and not INPUT.ctrl then
+    -- Alt+H is the held help peek; consume it (do not let H
+    -- reach the scene as game input). The overlay is drawn
+    -- from the held state while the keys stay down.
+    return
+  end
   if k == "capslock" then capsToggle() end
   local s = SCENES[ACTIVE]
   if s and s.keypressed then s.keypressed(k) end

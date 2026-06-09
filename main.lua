@@ -6,7 +6,10 @@
 
 gfx = love.graphics
 
+-- Shared infrastructure plus the two scenes needed at boot
+-- (intro, menu). Mini-games are lazy-loaded on first entry.
 dofile("config.lua")
+dofile("locale.lua")
 dofile("layout.lua")
 dofile("sound.lua")
 dofile("sequence.lua")
@@ -15,9 +18,13 @@ dofile("indicators.lua")
 dofile("notch.lua")
 dofile("scene.lua")
 dofile("input.lua")
+dofile("help.lua")
 dofile("intro.lua")
 dofile("menu.lua")
-dofile("choose.lua")
+
+-- Games present in this build (lazy-loaded). Adding a slice
+-- registers its file here; the menu picks it up structurally.
+SCENE_FILE.choose = "choose.lua"
 
 notchInit()
 inputInit()
@@ -37,6 +44,7 @@ function love.draw()
   gfx.translate((w - REF_W * s) / 2, (h - REF_H * s) / 2)
   gfx.scale(s, s)
   sceneDraw()
+  drawHelpLayer()
   gfx.pop()
 end
 

@@ -1,19 +1,25 @@
--- Shared sound palette. Wraps compy.audio with only the
--- blessed, gentle sounds. There is deliberately no wrong sound
--- anywhere in this program.
+-- Shared sound palette. Maps gentle game EVENTS to compy.audio
+-- samples by meaning, so callers say what happened rather than
+-- which sample plays (and the mapping can change in one place).
+-- There is deliberately no failure or wrong-key sound.
 
 sfx = compy.audio
 
 SOUND = { }
 
-function SOUND.knock()
+-- Typewriter key tick: the intro's simulated Caps Lock press
+-- and each letter of the heading.
+function SOUND.typeTick()
   sfx.knock()
 end
 
-function SOUND.ping()
-  sfx.ping()
+-- A correct match in Choose / Find: the warm xylophone chime.
+function SOUND.match()
+  sfx.correct()
 end
 
-function SOUND.correct()
-  sfx.correct()
+-- Finishing a whole run (completion screen). Gentle, not an
+-- arcade jingle; the sample is easy to retune here.
+function SOUND.gameWin()
+  sfx.win()
 end

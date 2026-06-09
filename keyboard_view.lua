@@ -81,13 +81,19 @@ KB_LABEL.fn = "Fn"
 KB_LABEL.zzz = "Zzz"
 KB_LABEL.pause = "Pause"
 KB_LABEL.space = ""
-KB_LABEL.up = "Up"
-KB_LABEL.down = "Dn"
-KB_LABEL.left = "Lt"
-KB_LABEL.right = "Rt"
+KB_LABEL.up = "↑"
+KB_LABEL.down = "↓"
+KB_LABEL.left = "←"
+KB_LABEL.right = "→"
 for i = 1, 12 do
   KB_LABEL["f" .. i] = "F" .. i
 end
+
+-- Single-glyph keys that still want the large keycap font even
+-- though their label is multi-byte UTF-8.
+KB_ARROW = {
+  up = true, down = true, left = true, right = true
+}
 
 function kbWidthMM(name, ri)
   local w = KB_WMM[name]
@@ -150,8 +156,8 @@ function kbBuildCells()
 end
 
 kbComputeScale()
-KCAP_BIG = gfx.newFont(FONT_PATH, math.floor(5 * KB.scale))
-KCAP_SMALL = gfx.newFont(FONT_PATH, math.floor(2.7 * KB.scale))
+KCAP_BIG = getFont(math.floor(5 * KB.scale))
+KCAP_SMALL = getFont(math.floor(2.7 * KB.scale))
 kbBuildCells()
 
 function kbLabel(name)
@@ -164,8 +170,9 @@ end
 function kbDrawLabel(cell)
   local label = kbLabel(cell.name)
   if label == "" then return end
-  local font = KCAP_BIG
-  if #label > 1 then font = KCAP_SMALL end
+  local big = #label == 1 or KB_ARROW[cell.name]
+  local font = KCAP_SMALL
+  if big then font = KCAP_BIG end
   gfx.setFont(font)
   gfx.setColor(COL_KEY_LABEL)
   local ty = cell.y + (cell.h - font:getHeight()) / 2
@@ -192,13 +199,9 @@ function kbKeyFace(cell, bg, dec)
   kbDrawLabel(cell)
 end
 
-function drawKey(cell, dec)
+function drawKey(cell, dec, sc)
   local bg = COL_KEY
-  local sc = 1
-  if dec then
-    if dec.bg then bg = dec.bg end
-    if dec.pulse then sc = dec.pulse end
-  end
+  if dec and dec.bg then bg = dec.bg end
   local cx = cell.x + cell.w / 2
   local cy = cell.y + cell.h / 2
   gfx.push()
@@ -209,9 +212,21 @@ function drawKey(cell, dec)
   gfx.pop()
 end
 
+-- A highlighted key (pulse or glow) is redrawn on a top layer
+-- so it never z-fights with neighbours drawn after it.
+function kbRaised(dec)
+  return dec and (dec.pulse or dec.glow)
+end
+
 function drawKeyboard(deco)
   for _, c in ipairs(KB.cells) do
-    drawKey(c, deco and deco[c.name])
+    drawKey(c, deco and deco[c.name], 1)
+  end
+  for _, c in ipairs(KB.cells) do
+    local dec = deco and deco[c.name]
+    if kbRaised(dec) then
+      drawKey(c, dec, dec.pulse or 1)
+    end
   end
 end
 

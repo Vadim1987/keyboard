@@ -19,13 +19,28 @@ STATUS_BAND = { STATUS_Y0, STATUS_Y1 }
 
 FONT_PATH = "assets/fonts/SarasaGothicJ-Bold.ttf"
 
--- Shared UI fonts, created once at load.
-UIFONT = { }
-UIFONT.head = gfx.newFont(FONT_PATH, 60)
-UIFONT.big = gfx.newFont(FONT_PATH, 72)
-UIFONT.menu = gfx.newFont(FONT_PATH, 34)
-UIFONT.status = gfx.newFont(FONT_PATH, 24)
-UIFONT.count = gfx.newFont(FONT_PATH, 22)
+-- Semantic UI font sizes (reference pixels).
+FONT_HEAD = 60
+FONT_BIG = 72
+FONT_MENU = 34
+FONT_STATUS = 24
+FONT_COUNT = 22
+FONT_HELP = 30
+FONT_HINT = 20
+
+-- Fonts are created on demand and cached by pixel size, so a
+-- size that no scene uses is never rasterized (the device is
+-- low-end and font creation is the costly part of boot).
+FONTS = { }
+
+function getFont(px)
+  local font = FONTS[px]
+  if not font then
+    font = gfx.newFont(FONT_PATH, px)
+    FONTS[px] = font
+  end
+  return font
+end
 
 -- Draw text horizontally centered across the reference width,
 -- vertically centered in band { y0, y1 }, with font/color.

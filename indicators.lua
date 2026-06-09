@@ -25,6 +25,8 @@ function capsReconcile(letter, shift_held)
   CAPS_STATE.on = (up ~= shift_held)
 end
 
+-- Physical lock-decal labels mirroring the Compy keyboard;
+-- like the keycap labels, they are not localized.
 IND_LABELS = { "Num", "Caps", "Scrl" }
 
 function indChipColor(i, caps_on)
@@ -35,10 +37,11 @@ function indChipColor(i, caps_on)
 end
 
 function indDrawChip(label, rect, color)
+  local font = getFont(FONT_COUNT)
   gfx.setColor(color)
   gfx.rectangle("line", rect.x, rect.y, rect.w, rect.h, 4)
-  gfx.setFont(UIFONT.count)
-  local ty = rect.y + (rect.h - UIFONT.count:getHeight()) / 2
+  gfx.setFont(font)
+  local ty = rect.y + (rect.h - font:getHeight()) / 2
   gfx.printf(label, rect.x, ty, rect.w, "center")
 end
 
