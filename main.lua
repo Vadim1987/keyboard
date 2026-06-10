@@ -20,6 +20,7 @@ dofile("scene.lua")
 dofile("input.lua")
 dofile("help.lua")
 dofile("cfcore.lua")
+dofile("huntadapt.lua")
 dofile("intro.lua")
 dofile("menu.lua")
 
@@ -27,12 +28,16 @@ dofile("menu.lua")
 -- registers its file here; the menu picks it up structurally.
 SCENE_FILE.choose = "choose.lua"
 SCENE_FILE.find = "find.lua"
+SCENE_FILE.hunt = "hunt.lua"
 
 notchInit()
 inputInit()
 gotoScene("intro")
 
 function love.update(dt)
+  -- An open help overlay pauses the active game; it resumes
+  -- when dismissed (docs/compy-ux-principles.md).
+  if helpOverlayShown() then return end
   sceneUpdate(dt)
 end
 
