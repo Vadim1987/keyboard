@@ -39,6 +39,9 @@ LOCALE.en = {
       .. "Ctrl+Alt+↑ faster   Ctrl+Alt+↓ slower",
     caps = "Type the letter shown above.\n\n"
       .. "Press Caps Lock to make capitals.\n"
+      .. "Shift+Esc  back to the menu",
+    shift_caps = "Make the BIG letter shown above.\n\n"
+      .. "Hold Shift and press the letter.\n"
       .. "Shift+Esc  back to the menu"
   }
 }

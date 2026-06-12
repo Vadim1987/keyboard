@@ -68,19 +68,22 @@ end
 
 -- Auto-match the notch from this target's result; a change
 -- reshuffles for the new letter set.
-function capsAuto(clean)
-  local d = notchAutoResult("caps", -2, 2, clean,
+function capsAuto(outcome)
+  local d = notchAutoResult("caps", -2, 2, outcome,
     CAPS_HINT_COOLDOWN)
   if d ~= 0 then capsShuffle() end
 end
 
 -- Clean = correct case on the first letter press; struggle =
--- 2+ wrong-case presses. Anything in between counts as neither.
+-- 2+ wrong-case presses. Anything between is a "none" that
+-- breaks both consecutive streaks.
 function capsScore()
   if CAPS.clean then
-    capsAuto(true)
+    capsAuto("clean")
   elseif CAPS.wrongcase >= 2 then
-    capsAuto(false)
+    capsAuto("struggle")
+  else
+    capsAuto("none")
   end
 end
 

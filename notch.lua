@@ -24,10 +24,12 @@ function notchShift(id, delta, lo, hi)
   return v
 end
 
--- Auto-match adapter (Caps/Shift): the notch shifts itself from
--- clean/struggle counts -- 3 clean -> up, 2 struggle -> down --
--- once the cooldown since the last auto-change has elapsed.
--- Counters reset on every notch change (auto or teacher).
+-- Auto-match adapter (Caps/Shift): the notch shifts itself on
+-- CONSECUTIVE streaks -- 3 clean in a row -> up, 2 struggles ->
+-- down -- once the cooldown since the last change has elapsed.
+-- The opposite outcome breaks a streak; counters also reset on
+-- any notch change (auto or teacher). Canonical rule:
+-- docs/compy-ux-principles.md "Difficulty Notches".
 NOTCH_AUTO = { }
 
 function notchAutoReset(id)
@@ -45,20 +47,27 @@ function notchAutoDir(a)
   return 0
 end
 
-function notchAutoCount(id, clean)
+-- Streaks are CONSECUTIVE: a clean resets the struggle streak,
+-- a struggle resets the clean streak, and a "none" breaks both.
+function notchAutoCount(id, outcome)
   local a = NOTCH_AUTO[id]
-  if clean then
+  if outcome == "clean" then
     a.clean = a.clean + 1
-  else
+    a.struggle = 0
+  elseif outcome == "struggle" then
     a.struggle = a.struggle + 1
+    a.clean = 0
+  else
+    a.clean = 0
+    a.struggle = 0
   end
 end
 
--- Record one attempt (clean true / struggle false); returns the
--- signed notch change applied (0 if none). On a real change the
--- counters reset and the cooldown arms.
-function notchAutoResult(id, lo, hi, clean, cooldown)
-  notchAutoCount(id, clean)
+-- Record one target's outcome ("clean" / "struggle" / "none").
+-- Returns the signed notch change (0 if none); on a real change
+-- the counters reset and the cooldown arms.
+function notchAutoResult(id, lo, hi, outcome, cooldown)
+  notchAutoCount(id, outcome)
   local a = NOTCH_AUTO[id]
   if a.cd > 0 then return 0 end
   local d = notchAutoDir(a)
