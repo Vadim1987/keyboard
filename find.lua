@@ -49,9 +49,9 @@ end
 
 function findTargetFont()
   if notchGet("find") == -2 then
-    return getFont(FONT_TARGET_BIG)
+    return getGlyphFont(FONT_TARGET_BIG)
   end
-  return getFont(FONT_BIG)
+  return getGlyphFont(FONT_BIG)
 end
 
 function findDrawTarget()

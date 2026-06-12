@@ -72,7 +72,11 @@ function reservedChord(k)
 end
 
 function appKeypressed(k)
-  if INPUT.held[k] then return end
+  -- capslock is exempt from the repeat filter: it is a lock key
+  -- whose release may not arrive, which would wedge held[] and
+  -- freeze the Caps estimate. Every capslock edge must toggle.
+  if INPUT.held[k] and k ~= "capslock" then return end
+  dbgLog("KP " .. k)
   INPUT.held[k] = true
   inputUpdateMods()
   if reservedChord(k) then return end
@@ -88,6 +92,7 @@ function appKeypressed(k)
 end
 
 function appKeyreleased(k)
+  dbgLog("KR " .. k)
   INPUT.held[k] = nil
   inputUpdateMods()
   local s = SCENES[ACTIVE]
@@ -95,6 +100,7 @@ function appKeyreleased(k)
 end
 
 function appTextinput(t)
+  dbgLog("TI " .. t .. " sh=" .. tostring(INPUT.shift))
   if isAlphaChar(t) then
     capsReconcile(t, INPUT.shift)
   end

@@ -46,6 +46,20 @@ KEYSETS.punctuation = {
   "`", "-", "=", "\\", ";", ",",
   ".", "/", "[", "]", "'"
 }
+-- Caps/Shift letter sets. central_common = the central row plus
+-- the common letters E T R U I O P C M N; full_alphabet = every
+-- letter (central + remaining), built at load.
+KEYSETS.central_common = {
+  "f", "g", "h", "j", "d", "k", "s", "l", "a",
+  "e", "t", "r", "u", "i", "o", "p", "c", "m", "n"
+}
+KEYSETS.full_alphabet = { }
+for _, k in ipairs(KEYSETS.central) do
+  KEYSETS.full_alphabet[#KEYSETS.full_alphabet + 1] = k
+end
+for _, k in ipairs(KEYSETS.remaining_letters) do
+  KEYSETS.full_alphabet[#KEYSETS.full_alphabet + 1] = k
+end
 
 -- Fixed menu order (ids). Display labels are localized in
 -- locale.lua.
@@ -117,3 +131,26 @@ end
 for _, k in ipairs(KEYSETS.remaining_letters) do
   HUNT_CHARS[#HUNT_CHARS + 1] = k
 end
+
+-- Big letters (Caps Lock). Each notch picks a letter set, a
+-- case mode (mixed = some lowercase targets too), how strongly
+-- the Caps Lock key is hinted, and whether the pause shortens.
+-- The notch auto-matches (notch.lua): 3 clean -> up, 2 struggle
+-- -> down, >=15 s cooldown. CAPS_HINT_COOLDOWN is that window.
+CAPS_HINT_COOLDOWN = 15
+CAPS_NOTCH = { }
+CAPS_NOTCH[-2] = {
+  set = "central4", mixed = false, hint = "always"
+}
+CAPS_NOTCH[-1] = {
+  set = "central_common", mixed = false, hint = "always"
+}
+CAPS_NOTCH[0] = {
+  set = "full_alphabet", mixed = true, hint = "wrong"
+}
+CAPS_NOTCH[1] = {
+  set = "full_alphabet", mixed = true, hint = "off"
+}
+CAPS_NOTCH[2] = {
+  set = "full_alphabet", mixed = true, hint = "off", fast = true
+}

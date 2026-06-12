@@ -43,6 +43,21 @@ function getFont(px)
   return font
 end
 
+-- Disambiguating font for the standalone "letter to find"
+-- displays (Find/Caps/Hunt targets): unlike the UI sans, its
+-- I, l and 1 are clearly distinct. Prose/keycaps keep getFont.
+FONT_GLYPH_PATH = "assets/fonts/ubuntu_mono_bold_nerd.ttf"
+GLYPH_FONTS = { }
+
+function getGlyphFont(px)
+  local font = GLYPH_FONTS[px]
+  if not font then
+    font = gfx.newFont(FONT_GLYPH_PATH, px)
+    GLYPH_FONTS[px] = font
+  end
+  return font
+end
+
 -- Draw text horizontally centered across the reference width,
 -- vertically centered in band { y0, y1 }, with font/color.
 function drawBandText(text, band, font, color)

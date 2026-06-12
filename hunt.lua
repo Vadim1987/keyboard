@@ -172,7 +172,7 @@ end
 -- center), so they sit on the floor instead of sinking through
 -- it, leaving the space below the line free for the help hint.
 function huntWaveHalf()
-  return getFont(FONT_BIG):getHeight() / 2
+  return getGlyphFont(FONT_BIG):getHeight() / 2
 end
 
 function huntTickFall(dt)
@@ -283,7 +283,7 @@ end
 function huntDrawWave()
   local sc, a = huntWaveAnim()
   if a <= 0 then return end
-  local font = getFont(FONT_BIG)
+  local font = getGlyphFont(FONT_BIG)
   local cx = REF_W / 2
   gfx.push()
   gfx.translate(cx, HUNT.y)

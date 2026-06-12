@@ -36,7 +36,10 @@ LOCALE.en = {
       .. "Ctrl+Alt+↓  make it easier",
     hunt = "Type each falling letter before it lands.\n\n"
       .. "Shift+Esc  back to the menu\n"
-      .. "Ctrl+Alt+↑ faster   Ctrl+Alt+↓ slower"
+      .. "Ctrl+Alt+↑ faster   Ctrl+Alt+↓ slower",
+    caps = "Type the letter shown above.\n\n"
+      .. "Press Caps Lock to make capitals.\n"
+      .. "Shift+Esc  back to the menu"
   }
 }
 

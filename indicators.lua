@@ -29,9 +29,10 @@ end
 -- like the keycap labels, they are not localized.
 IND_LABELS = { "Num", "Caps", "Scrl" }
 
-function indChipColor(i, caps_on)
-  if i == 2 and caps_on then
-    return COL_IND_ON
+function indChipColor(i, caps_on, nudge)
+  if i == 2 then
+    if nudge then return COL_WARM end
+    if caps_on then return COL_IND_ON end
   end
   return COL_DIM
 end
@@ -47,7 +48,7 @@ end
 
 -- Three decals anchored bottom-right of the status band,
 -- below the keyboard's right edge, in order Num, Caps, Scroll.
-function drawIndicators(caps_on)
+function drawIndicators(caps_on, nudge)
   local cw, ch, gap = 56, 30, 6
   local total = 3 * cw + 2 * gap
   local x0 = (KB.x + KB.w) - total
@@ -56,6 +57,6 @@ function drawIndicators(caps_on)
     local cx = x0 + (i - 1) * (cw + gap)
     local rect = { x = cx, y = y, w = cw, h = ch }
     indDrawChip(IND_LABELS[i], rect,
-      indChipColor(i, caps_on))
+      indChipColor(i, caps_on, nudge))
   end
 end

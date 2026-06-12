@@ -160,10 +160,22 @@ KCAP_BIG = getFont(math.floor(5 * KB.scale))
 KCAP_SMALL = getFont(math.floor(2.7 * KB.scale))
 kbBuildCells()
 
+-- Effective case of letter keycaps: upper iff Caps XOR Shift.
+function capsEffectiveUpper()
+  if INPUT.shift then return not CAPS_STATE.on end
+  return CAPS_STATE.on
+end
+
 function kbLabel(name)
   local l = KB_LABEL[name]
   if l then return l end
-  if #name == 1 then return string.upper(name) end
+  if #name == 1 then
+    if KB_LIVECASE and isAlphaChar(name)
+        and not capsEffectiveUpper() then
+      return name
+    end
+    return string.upper(name)
+  end
   return name
 end
 
@@ -218,7 +230,10 @@ function kbRaised(dec)
   return dec and (dec.pulse or dec.glow)
 end
 
-function drawKeyboard(deco)
+-- livecase = let letter keycaps follow the effective Caps/Shift
+-- case (Caps game only); other scenes pass nil = always upper.
+function drawKeyboard(deco, livecase)
+  KB_LIVECASE = livecase
   for _, c in ipairs(KB.cells) do
     drawKey(c, deco and deco[c.name], 1)
   end
