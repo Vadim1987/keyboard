@@ -65,6 +65,7 @@ SCENE_FILE.find = "find.lua"
 SCENE_FILE.hunt = "hunt.lua"
 SCENE_FILE.caps = "caps.lua"
 SCENE_FILE.shift_caps = "shift_caps.lua"
+SCENE_FILE.shift_symbols = "shift_symbols.lua"
 
 notchInit()
 inputInit()

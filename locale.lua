@@ -42,6 +42,9 @@ LOCALE.en = {
       .. "Shift+Esc  back to the menu",
     shift_caps = "Make the BIG letter shown above.\n\n"
       .. "Hold Shift and press the letter.\n"
+      .. "Shift+Esc  back to the menu",
+    shift_symbols = "Make the symbol shown above.\n\n"
+      .. "Hold Shift and press its key.\n"
       .. "Shift+Esc  back to the menu"
   }
 }

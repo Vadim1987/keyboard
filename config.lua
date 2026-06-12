@@ -154,3 +154,40 @@ CAPS_NOTCH[1] = {
 CAPS_NOTCH[2] = {
   set = "full_alphabet", mixed = true, hint = "off", fast = true
 }
+
+-- Symbols with Shift. SHIFT_MAP: the symbol a base key makes
+-- with Shift held; used for targets, the base-key hint, and the
+-- shifted keycap labels. Caps Lock does not affect these.
+SHIFT_MAP = {
+  ["1"] = "!", ["2"] = "@", ["3"] = "#", ["4"] = "$",
+  ["5"] = "%", ["6"] = "^", ["7"] = "&", ["8"] = "*",
+  ["9"] = "(", ["0"] = ")", ["`"] = "~", ["-"] = "_",
+  ["="] = "+", ["["] = "{", ["]"] = "}", ["\\"] = "|",
+  [";"] = ":", ["'"] = "\"", [","] = "<", ["."] = ">",
+  ["/"] = "?"
+}
+
+-- Symbol target sets as BASE KEYS (target = SHIFT_MAP[base]).
+SYM_SETS = { }
+SYM_SETS.intro = { "1", "/" }
+SYM_SETS.small = { "1", "/", ",", "." }
+SYM_SETS.numbers = {
+  "1", "2", "3", "4", "5", "6", "7", "8", "9", "0"
+}
+SYM_SETS.plus = {
+  "1", "2", "3", "4", "5", "6", "7", "8", "9", "0",
+  "/", "-", "=", ";", ",", ".", "'"
+}
+SYM_SETS.full = {
+  "1", "2", "3", "4", "5", "6", "7", "8", "9", "0",
+  "`", "-", "=", "\\", ";", "'", ",", ".", "/", "[", "]"
+}
+
+-- Notch sets the symbol set + how the base+Shift pair is hinted
+-- ("always" / "miss" = only after a wrong try / "off").
+SYMBOL_NOTCH = { }
+SYMBOL_NOTCH[-2] = { set = "intro", hint = "always" }
+SYMBOL_NOTCH[-1] = { set = "small", hint = "always" }
+SYMBOL_NOTCH[0] = { set = "numbers", hint = "miss" }
+SYMBOL_NOTCH[1] = { set = "plus", hint = "off" }
+SYMBOL_NOTCH[2] = { set = "full", hint = "off" }

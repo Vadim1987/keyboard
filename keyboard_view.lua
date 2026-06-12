@@ -169,6 +169,9 @@ end
 function kbLabel(name)
   local l = KB_LABEL[name]
   if l then return l end
+  if KB_SHIFTLABEL and SHIFT_MAP[name] then
+    return SHIFT_MAP[name]
+  end
   if #name == 1 then
     if KB_LIVECASE and isAlphaChar(name)
         and not capsEffectiveUpper() then
@@ -230,10 +233,12 @@ function kbRaised(dec)
   return dec and (dec.pulse or dec.glow)
 end
 
--- livecase = let letter keycaps follow the effective Caps/Shift
--- case (Caps game only); other scenes pass nil = always upper.
-function drawKeyboard(deco, livecase)
+-- livecase = letter keycaps follow effective Caps/Shift case
+-- (Caps game). shiftlabel = number/punctuation keys show their
+-- shifted symbol (Symbols game). Other scenes pass nil.
+function drawKeyboard(deco, livecase, shiftlabel)
   KB_LIVECASE = livecase
+  KB_SHIFTLABEL = shiftlabel
   for _, c in ipairs(KB.cells) do
     drawKey(c, deco and deco[c.name], 1)
   end
