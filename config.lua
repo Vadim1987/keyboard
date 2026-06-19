@@ -34,12 +34,8 @@ PASTEL_RAMP[3] = { 255 / 255, 147 / 255, 111 / 255 }
 PASTEL_RAMP[4] = { 255 / 255, 102 / 255, 102 / 255 }
 PASTEL_FADE = 0.3
 
--- Behavior flags.
-CFG = { choose_punct = false }
-
 -- Key sets (LOVE key constants).
 KEYSETS = { }
-KEYSETS.distinctive = { "space", "return", "backspace" }
 KEYSETS.central4 = { "f", "g", "h", "j" }
 KEYSETS.central = {
   "f", "g", "h", "j", "d",
@@ -53,10 +49,6 @@ KEYSETS.remaining_letters = {
   "q", "w", "e", "r", "t", "y",
   "u", "i", "o", "p", "z", "x",
   "c", "v", "b", "n", "m"
-}
-KEYSETS.punctuation = {
-  "`", "-", "=", "\\", ";", ",",
-  ".", "/", "[", "]", "'"
 }
 -- Caps/Shift letter sets. central_common = the central row plus
 -- the common letters E T R U I O P C M N; full_alphabet = every
@@ -113,22 +105,11 @@ WELCOME = {
   letter_beat = 0.6
 }
 
--- Choose / Find notch: which key groups are active. The game is
--- untimed, so the notch changes only the key SET, never pacing.
--- CF_PAUSE is one calm beat for the success chime + burst, the
--- same at every notch.
+-- Calm pause beat for the success chime + burst in the legacy
+-- big-letter / symbol scenes (caps, shift_caps, shift_symbols),
+-- retired at the Alt slice. The find-key drills use per-notch
+-- pacing from PRESS_NOTCH instead.
 CF_PAUSE = 0.5
-CF_NOTCH = { }
-CF_NOTCH[-2] = { groups = { "distinctive", "central4" } }
-CF_NOTCH[-1] = {
-  groups = { "distinctive", "central", "numbers" }
-}
-CF_NOTCH[0] = {
-  groups = {
-    "distinctive", "central",
-    "numbers", "remaining_letters"
-  }
-}
 
 -- Press the key, round-gauge model. Notch -2..+2 grows the key
 -- set by physical row and sets the inter-target pause (delay

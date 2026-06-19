@@ -35,7 +35,7 @@ LOCALE.en = {
       .. "Ctrl+Alt+↑/↓  change difficulty",
     find = "Find the key shown above, then press it.\n\n"
       .. "Shift+Esc  back to the menu\n"
-      .. "Ctrl+Alt+↓  make it easier",
+      .. "Ctrl+Alt+↑/↓  change difficulty",
     hunt = "Type each falling letter before it lands.\n\n"
       .. "Shift+Esc  back to the menu\n"
       .. "Ctrl+Alt+↑ faster   Ctrl+Alt+↓ slower",

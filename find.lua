@@ -1,71 +1,44 @@
--- Mini-game 2: Find the key. Same shared mastery core as Choose
--- (cfcore.lua), but the keyboard is NOT highlighted -- instead
--- one large target is shown in the header band and the child
--- hunts for it. The correct physical key is accepted (case and
--- Shift ignored); same chime + burst. At notch -2 the target is
--- larger with the smallest key set.
+-- Find the key. The same shared find-key scene core as Press
+-- (findkey.lua) and the same -2..+2 ladder (PRESS_NOTCH is the
+-- source of truth for both, per the spec), but the keyboard is
+-- NOT highlighted: the child reads the board and hunts for the
+-- key shown as a keycap in the top band. Case and Shift state
+-- are ignored -- the correct physical key is accepted however
+-- it is pressed. Same chime, burst, gauge, advance screen, and
+-- per-notch pastel as Press; the only difference is no glow.
 
-FIND = {
-  phase = "glow",
-  pause = 0,
-  pulse = 0,
-  burst = nil,
-  clean = true
-}
-
--- Full written names for the non-printing targets.
-FIND_TARGET = {
-  space = "SPACE",
-  ["return"] = "ENTER",
-  backspace = "BACKSPACE"
+FIND = { pulse = 0, burst = nil, fw = { } }
+FIND_CFG = {
+  id = "find",
+  notch = PRESS_NOTCH,
+  lo = PRESS_LO,
+  hi = PRESS_HI
 }
 
 function findEnter()
-  cfEnter(FIND, "find")
+  fkEnter(FIND, FIND_CFG)
 end
 
 function findUpdate(dt)
-  cfUpdate(FIND, "find", dt)
+  fkUpdate(FIND, FIND_CFG, dt)
 end
 
 function findKeypressed(k)
-  cfKeypressed(FIND, "find", k)
+  fkKeypressed(FIND, FIND_CFG, k)
 end
 
 function findOnNotch(delta)
-  cfOnNotch(FIND, "find", delta)
+  fkOnNotch(FIND, FIND_CFG, delta)
 end
 
 function findDone()
-  return cfDone(FIND)
+  return fkDone(FIND)
 end
 
-function findTargetText(name)
-  local t = FIND_TARGET[name]
-  if t then return t end
-  return string.upper(name)
-end
-
-function findTargetFont()
-  if notchGet("find") == -2 then
-    return getGlyphFont(FONT_TARGET_BIG)
-  end
-  return getGlyphFont(FONT_BIG)
-end
-
-function findDrawTarget()
-  local name = seqCurrent()
-  if not name then return end
-  drawBandText(findTargetText(name), HEADER_BAND,
-    findTargetFont(), COL_TEXT)
-end
-
+-- No keyboard glow: the child must find the key unaided. The
+-- shared core draws the keycap target, gauge, and the rest.
 function findDraw()
-  drawKeyboard({ })
-  if not findDone() then findDrawTarget() end
-  if FIND.burst then drawBurst(FIND.burst) end
-  drawIndicators(CAPS_STATE.on)
-  if findDone() then cfDrawDone("find") end
+  fkDraw(FIND, FIND_CFG, { })
 end
 
 registerScene("find", {

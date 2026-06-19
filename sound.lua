@@ -19,12 +19,6 @@ function SOUND.match()
   sfx.toggle()
 end
 
--- Finishing a whole run (completion screen). Gentle, not an
--- arcade jingle; the sample is easy to retune here.
-function SOUND.gameWin()
-  sfx.win()
-end
-
 -- A round win in the gauge games: win.ogg.
 function SOUND.win()
   sfx.win()
