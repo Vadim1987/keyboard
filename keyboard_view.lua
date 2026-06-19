@@ -158,6 +158,12 @@ end
 kbComputeScale()
 KCAP_BIG = getFont(math.floor(5 * KB.scale))
 KCAP_SMALL = getFont(math.floor(2.7 * KB.scale))
+-- Larger keycap fonts for the top-band target (Press/Find/Alt).
+-- Monospace glyph font so 0/O and l/I/1 read clearly when the
+-- child must FIND the key (the keyboard picture stays sans).
+KCAP_T_H = 64
+KCAP_T_BIG = getGlyphFont(40)
+KCAP_T_SMALL = getGlyphFont(26)
 kbBuildCells()
 
 -- Effective case of letter keycaps: upper iff Caps XOR Shift.
@@ -254,6 +260,46 @@ function keyRect(name)
   return KB.rect[name]
 end
 
+-- Target keycap in the top band (Press/Find/Alt). The keyboard
+-- picture below carries any glow; this is the calm "what to
+-- press" cap. Space shows "Space"; specials use KB_LABEL.
+function kbTargetLabel(name)
+  if name == "space" then return "Space" end
+  return kbLabel(name)
+end
+
+function kbTargetCell(label, font)
+  local w = font:getWidth(label) + 28
+  if w < KCAP_T_H then w = KCAP_T_H end
+  local band = HEADER_Y1 - HEADER_Y0
+  local cell = { }
+  cell.x = (REF_W - w) / 2
+  cell.y = HEADER_Y0 + (band - KCAP_T_H) / 2
+  cell.w = w
+  cell.h = KCAP_T_H
+  return cell
+end
+
+function kbTargetText(cell, label, font)
+  gfx.setFont(font)
+  gfx.setColor(COL_KEY_LABEL)
+  local ty = cell.y + (cell.h - font:getHeight()) / 2
+  gfx.printf(label, cell.x, ty, cell.w, "center")
+end
+
+function drawKeycapTarget(name)
+  local label = kbTargetLabel(name)
+  local big = #label == 1 or KB_ARROW[name]
+  local font = KCAP_T_SMALL
+  if big then font = KCAP_T_BIG end
+  local cell = kbTargetCell(label, font)
+  gfx.setColor(COL_KEY)
+  gfx.rectangle("fill", cell.x, cell.y, cell.w, cell.h, 8)
+  gfx.setColor(COL_KEY_EDGE)
+  gfx.rectangle("line", cell.x, cell.y, cell.w, cell.h, 8)
+  kbTargetText(cell, label, font)
+end
+
 -- Expanding-ring success burst, b = { x, y, t } with t in
 -- seconds counting down from 0.5.
 function drawBurst(b)
@@ -265,4 +311,31 @@ function drawBurst(b)
   gfx.circle("line", b.x, b.y, rad)
   gfx.circle("line", b.x, b.y, rad * 0.55)
   gfx.setLineWidth(1)
+end
+
+-- Subtle win-gauge: a vertical thermometer in the right margin
+-- (the left edge is clipped on current hardware), filling
+-- bottom-up as the set is cleared. Clear of the bottom hints
+-- and the lock cluster. Dark ink reads over every pastel.
+-- Reused by the round-gauge exercises.
+WGAUGE_W = 8
+
+function winGaugeFrac(cleared, total)
+  if total <= 0 then return 0 end
+  local f = cleared / total
+  if f < 0 then return 0 end
+  if f > 1 then return 1 end
+  return f
+end
+
+function drawWinGauge(cleared, total)
+  local f = winGaugeFrac(cleared, total)
+  local x = REF_W - 16
+  local y0 = KBAND_Y0
+  local h = KBAND_Y1 - KBAND_Y0
+  local c = COL_KEY_LABEL
+  gfx.setColor(c[1], c[2], c[3], 0.18)
+  gfx.rectangle("fill", x, y0, WGAUGE_W, h, 4)
+  gfx.setColor(c[1], c[2], c[3], 0.85)
+  gfx.rectangle("fill", x, y0 + h * (1 - f), WGAUGE_W, h * f, 4)
 end

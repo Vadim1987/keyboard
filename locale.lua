@@ -17,10 +17,12 @@ LOCALE.en = {
   good_job = "Good job!",
   tab_next = "Tab → next game",
   tab_menu = "Tab → menu",
+  tab_level = "Tab → next level",
   replay = "Enter or R → play again",
   help_hint = "Hold Alt+H for help",
+  back_hint = "Shift+Esc → menu",
   games = {
-    choose = "Choose the same key",
+    press = "Press the key",
     find = "Find the key",
     hunt = "Hunt the falling objects",
     caps = "Big letters",
@@ -28,9 +30,9 @@ LOCALE.en = {
     shift_symbols = "Symbols with Shift"
   },
   help = {
-    choose = "Press the key that glows.\n\n"
+    press = "Press the key that glows.\n\n"
       .. "Shift+Esc  back to the menu\n"
-      .. "Ctrl+Alt+↓  make it easier",
+      .. "Ctrl+Alt+↑/↓  change difficulty",
     find = "Find the key shown above, then press it.\n\n"
       .. "Shift+Esc  back to the menu\n"
       .. "Ctrl+Alt+↓  make it easier",

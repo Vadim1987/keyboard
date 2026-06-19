@@ -13,13 +13,24 @@ function SOUND.typeTick()
   sfx.knock()
 end
 
--- A correct match in Choose / Find: the warm xylophone chime.
+-- A correct match in the find-key games: a soft toggle blip
+-- (correct.ogg grated on repeat; toggle was chosen on device).
 function SOUND.match()
-  sfx.correct()
+  sfx.toggle()
 end
 
 -- Finishing a whole run (completion screen). Gentle, not an
 -- arcade jingle; the sample is easy to retune here.
 function SOUND.gameWin()
   sfx.win()
+end
+
+-- A round win in the gauge games: win.ogg.
+function SOUND.win()
+  sfx.win()
+end
+
+-- The biggest win, at the top notch: wow.ogg.
+function SOUND.wow()
+  sfx.wow()
 end

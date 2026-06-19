@@ -10,7 +10,6 @@ FIND = {
   pause = 0,
   pulse = 0,
   burst = nil,
-  notch_dirty = false,
   clean = true
 }
 

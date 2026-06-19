@@ -43,6 +43,7 @@ end
 -- Shared infrastructure plus the two scenes needed at boot
 -- (intro, menu). Mini-games are lazy-loaded on first entry.
 dofile("config.lua")
+dofile("pastel.lua")
 dofile("locale.lua")
 dofile("layout.lua")
 dofile("sound.lua")
@@ -50,6 +51,7 @@ dofile("sequence.lua")
 dofile("keyboard_view.lua")
 dofile("indicators.lua")
 dofile("notch.lua")
+dofile("gauge.lua")
 dofile("scene.lua")
 dofile("input.lua")
 dofile("help.lua")
@@ -60,7 +62,7 @@ dofile("menu.lua")
 
 -- Games present in this build (lazy-loaded). Adding a slice
 -- registers its file here; the menu picks it up structurally.
-SCENE_FILE.choose = "choose.lua"
+SCENE_FILE.press = "press.lua"
 SCENE_FILE.find = "find.lua"
 SCENE_FILE.hunt = "hunt.lua"
 SCENE_FILE.caps = "caps.lua"
@@ -72,7 +74,19 @@ inputInit()
 if DEBUG then pcall(dbgBoot) end
 gotoScene("intro")
 
+-- Hold ticks until the first frame is drawn, and cap dt, so a
+-- slow boot or GC spike never leaks into the first update or
+-- fast-forwards an animation (e.g. the intro typing) at once.
+-- DREW_ONCE flips true at the end of the first love.draw.
+DREW_ONCE = false
+MAX_DT = 0.1
+
 function updateStep(dt)
+  if not DREW_ONCE then return end
+  if dt > MAX_DT then dt = MAX_DT end
+  -- The pastel background eases every frame, even while a help
+  -- overlay pauses the game underneath.
+  pastelTick(dt)
   -- An open help overlay pauses the active game; it resumes
   -- when dismissed (docs/compy-ux-principles.md).
   if helpOverlayShown() then return end
@@ -94,7 +108,7 @@ function drawStep()
 end
 
 function love.draw()
-  gfx.clear(COL_BG[1], COL_BG[2], COL_BG[3])
+  pastelDrawBg()
   local w, h = gfx.getDimensions()
   local s = math.min(w / REF_W, h / REF_H)
   gfx.push()
@@ -107,6 +121,7 @@ function love.draw()
     if not ok then dbgLogErr("DRAW", err) end
   end
   gfx.pop()
+  DREW_ONCE = true
 end
 
 function love.keypressed(k)

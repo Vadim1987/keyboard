@@ -25,10 +25,15 @@ end
 
 function drawHelpHint()
   local font = getFont(FONT_HINT)
-  gfx.setFont(font)
-  gfx.setColor(COL_DIM)
+  local txt = STR.help_hint
   local y = REF_H - font:getHeight() - 8
-  gfx.printf(STR.help_hint, 0, y, REF_W, "center")
+  local w = font:getWidth(txt) + 12
+  local x = (REF_W - w) / 2
+  gfx.setColor(COL_KEY[1], COL_KEY[2], COL_KEY[3], 0.7)
+  gfx.rectangle("fill", x, y - 3, w, font:getHeight() + 6, 5)
+  gfx.setFont(font)
+  gfx.setColor(COL_TEXT)
+  gfx.printf(txt, 0, y, REF_W, "center")
 end
 
 function drawHelpOverlay()

@@ -1,17 +1,14 @@
--- Shared core for the two matching games, Choose and Find.
--- Both share one first-try mastery loop -- a key found on the
--- first try clears and counts; a key found after a wrong key
--- is requeued to come round again -- plus one completion
--- screen. Each scene owns its own state table (CHOOSE / FIND)
--- with the same fields and supplies only the presentation
--- (Choose glows a key; Find shows a large header target).
+-- First-try mastery loop with a completion screen, used by the
+-- Find matching game. A key found on the first try clears and
+-- counts; a key found after a wrong key is requeued to come
+-- round again. The scene owns its own state table (FIND) and
+-- supplies the presentation (Find shows a large header target).
 
 function cfReset(st)
   st.phase = "glow"
   st.pause = 0
   st.pulse = 0
   st.burst = nil
-  st.notch_dirty = false
   st.clean = true
 end
 
@@ -23,7 +20,6 @@ end
 function cfRebuild(st, id)
   seqResetCF(notchGet(id))
   st.phase = "glow"
-  st.notch_dirty = false
   st.clean = true
 end
 
@@ -43,9 +39,7 @@ end
 function cfTickPause(st, id, dt)
   st.pause = st.pause - dt
   if st.pause > 0 then return end
-  if st.notch_dirty then
-    cfApplyNotch(st, id)
-  elseif seqEmpty() then
+  if seqEmpty() then
     cfFinish(st)
   else
     st.clean = true
@@ -105,13 +99,14 @@ function cfKeypressed(st, id, k)
   end
 end
 
--- Only a notch that actually changes marks the pool dirty; a
--- saturated chord at the bounds must not reset progress.
+-- A changed notch rebuilds the pool immediately and shows a
+-- clean next target (the found count is preserved); a saturated
+-- chord at the bounds is a no-op, so progress is never reset.
 function cfOnNotch(st, id, delta)
   local old = notchGet(id)
-  if notchShift(id, delta, -2, 0) ~= old then
-    st.notch_dirty = true
-  end
+  notchShift(id, delta, -2, 0)
+  if notchGet(id) == old then return end
+  cfApplyNotch(st, id)
 end
 
 function cfDone(st)
@@ -126,14 +121,21 @@ function cfDoneTabLabel(id)
 end
 
 -- Shared completion screen: a calm compliment + a clear choice
--- (Tab to advance/exit, or Enter/R to play again). No count.
-function cfDrawDone(id)
+-- (Tab to advance, Enter/R to replay, Shift+Esc to the menu).
+-- tabLabel is caller-supplied (game- or notch-aware).
+function cfDrawDoneScreen(tabLabel)
   gfx.setColor(COL_OVERLAY)
   gfx.rectangle("fill", 0, 0, REF_W, REF_H)
-  drawBandText(STR.good_job, { 150, 240 },
+  drawBandText(STR.good_job, { 140, 220 },
     getFont(FONT_HEAD), COL_WARM)
-  drawBandText(cfDoneTabLabel(id), { 300, 340 },
+  drawBandText(tabLabel, { 286, 322 },
     getFont(FONT_STATUS), COL_TEXT)
-  drawBandText(STR.replay, { 346, 386 },
+  drawBandText(STR.replay, { 326, 362 },
     getFont(FONT_STATUS), COL_DIM)
+  drawBandText(STR.back_hint, { 366, 402 },
+    getFont(FONT_STATUS), COL_DIM)
+end
+
+function cfDrawDone(id)
+  cfDrawDoneScreen(cfDoneTabLabel(id))
 end
