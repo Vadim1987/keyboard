@@ -1,11 +1,16 @@
--- Mini-game 3: Hunt the falling objects. Characters fall from
--- the top; the child types each before it reaches the ground.
--- Full canvas (no keyboard, no indicators). The notch sets the
--- fall speed (-2..+2); the wave length (1..3) adapts by streak
--- (huntadapt.lua). Keys the child misses or fumbles (catches
--- only after a wrong press) come back more often until pressed
--- cleanly a few times. Input compares physical key constants
--- (Caps/Shift/case ignored). A missed wave flashes red.
+-- Mini-game 3: Hunt the falling objects. Capital keycaps fall
+-- from the top; the child types each before it lands. Full
+-- canvas (no keyboard, no indicators). The teacher (or the win
+-- screen) sets the speed notch (-2..+2), which also sets the
+-- wave-length ceiling lmax (2/3/4) and the gauge promote. The
+-- child earns wave length via a signed gauge: a catch adds 1,
+-- a miss subtracts 1. Reaching +promote grows the wave a
+-- length, or AT lmax opens the win screen (Tab = faster notch,
+-- Enter = replay from wave 1); reaching -3 shrinks it (never
+-- below 1). Background pastel tracks the notch. Missed or
+-- fumbled keys return more often (review). Keys compare as
+-- physical constants (case ignored): a wrong key bumps, a
+-- missed wave flashes red.
 
 HUNT = {
   chars = { },
@@ -16,17 +21,30 @@ HUNT = {
   phase = "fall",
   anim = 0,
   length = 1,
-  cstreak = 0,
-  mstreak = 0,
+  g = 0,
+  reset = false,
   review = { },
-  count = 0
+  prev = { },
+  count = 0,
+  fw = { }
 }
 
--- Game-owned, higher-pitched chime for a catch -- brighter than
--- the Choose/Find chime, to convey speed (11.5 supports
--- setPitch). Created once when the game loads.
+-- Advance-screen config; the shared find-key helpers
+-- (gaugeAtTop / fkDoneTabLabel / fkGotoNext) read id/lo/hi.
+-- Hunt's notch is now player-facing (the win screen climbs it).
+HUNT_SCENE = { id = "hunt", lo = -2, hi = 2 }
+
+-- Capital keycaps fall as squares sized from the glyph font, a
+-- small gap apart; the cap bottom lands on the ground line.
+HUNT_CAP_FONT = getGlyphFont(FONT_BIG)
+HUNT_CAP = HUNT_CAP_FONT:getHeight() + 16
+HUNT_CAP_GAP = 6
+
+-- Game-owned catch chime: win.ogg pitched up -- lighter than
+-- old correct.ogg, a better match for the toggle ticks, and
+-- brighter to convey speed (11.5 has setPitch). Built at load.
 HUNT_CHIME = love.audio.newSource(
-  "assets/sounds/correct.ogg", "static")
+  "assets/sounds/win.ogg", "static")
 HUNT_CHIME:setPitch(1.35)
 
 function huntChime()
@@ -36,6 +54,11 @@ end
 
 function huntCfg()
   return HUNT_NOTCH[notchGet("hunt")]
+end
+
+-- The pastel ramp level for the current notch (above floor).
+function huntColorLevel()
+  return notchGet("hunt") - HUNT_SCENE.lo
 end
 
 -- A fresh random letter not already used in this wave.
@@ -63,34 +86,60 @@ end
 -- most one review letter per wave keeps variety: a hard letter
 -- recurs but always in fresh company, never a "TT".
 function huntReviewSlot(len)
-  if next(HUNT.review) and love.math.random() < 0.7 then
+  if next(HUNT.review) and love.math.random() < 0.5 then
     return love.math.random(len)
   end
   return 0
 end
 
--- A wave of distinct letters, at most one drawn from review.
+-- A new wave never reuses the previous wave's letters, so a key
+-- (including a missed/review one) never repeats back-to-back.
+function huntUsedFromPrev()
+  local used = { }
+  for _, ch in ipairs(HUNT.prev) do
+    used[ch] = true
+  end
+  return used
+end
+
+function huntPickChar(isReview, used)
+  if isReview then return huntReviewChar(used) end
+  return huntFreshChar(used)
+end
+
+-- A wave of distinct letters, at most one from review, none
+-- repeating the previous wave (HUNT.prev).
 function huntBuildWave(len)
   local chars = { }
-  local used = { }
+  local used = huntUsedFromPrev()
   local slot = huntReviewSlot(len)
   for i = 1, len do
-    if i == slot then
-      chars[i] = huntReviewChar(used)
-    else
-      chars[i] = huntFreshChar(used)
-    end
+    chars[i] = huntPickChar(i == slot, used)
     used[chars[i]] = true
   end
+  HUNT.prev = chars
   return chars
 end
 
+-- A deferred teacher-notch reset (huntOnNotch) is applied here,
+-- at the next spawn, so the in-flight wave can finish without
+-- its catch/miss leaking gauge state into the fresh wave.
+function huntApplyReset()
+  if HUNT.reset then
+    HUNT.length = 1
+    HUNT.g = 0
+    HUNT.count = 0
+    HUNT.reset = false
+  end
+end
+
 -- Spawn the next wave. Length is clamped to the current notch's
--- range, so a notch change takes effect here (never mid-fall).
+-- lmax, so a notch change takes effect here (never mid-fall).
+-- The background pastel syncs to the current notch.
 function huntSpawn()
   local cfg = huntCfg()
-  HUNT.length = math.max(cfg.lmin,
-    math.min(HUNT.length, cfg.lmax))
+  huntApplyReset()
+  HUNT.length = math.max(1, math.min(HUNT.length, cfg.lmax))
   HUNT.chars = huntBuildWave(HUNT.length)
   HUNT.typed = 0
   HUNT.fumbled = false
@@ -98,14 +147,20 @@ function huntSpawn()
   HUNT.fall = cfg.fall
   HUNT.phase = "fall"
   HUNT.anim = 0
+  pastelLevel(huntColorLevel())
 end
 
 function huntEnter()
-  HUNT.length = huntCfg().lmin
-  HUNT.cstreak = 0
-  HUNT.mstreak = 0
+  notchEnterReset("hunt")
+  HUNT.length = 1
+  HUNT.g = 0
+  HUNT.reset = false
   HUNT.review = { }
+  HUNT.prev = { }
   HUNT.count = 0
+  HUNT.fw = { }
+  pastelLevel(huntColorLevel())
+  pastelSnap()
   huntSpawn()
 end
 
@@ -127,10 +182,9 @@ function huntReviewMissed()
   end
 end
 
--- A correct keystroke (first-try mastery, as in Choose/Find):
--- a clean one (no wrong press first) progresses the letter out
--- of review; one typed only after a wrong press marks it hard
--- and (re)adds it.
+-- A correct keystroke (first-try mastery, as in Press/Find): a
+-- clean one progresses the letter out of review; one typed only
+-- after a wrong press marks it hard and (re)adds it.
 function huntCorrect(ch)
   if HUNT.fumbled then
     HUNT.review[ch] = HUNT_CFG.review_hits
@@ -140,39 +194,77 @@ function huntCorrect(ch)
   end
 end
 
--- Streak-based length change; the streak that fired is reset.
-function huntAdapt()
-  local cfg = huntCfg()
-  HUNT.length = huntStreakLength(HUNT.cstreak,
-    HUNT.mstreak, HUNT.length, cfg.lmin, cfg.lmax)
-  if HUNT.cstreak >= 5 then HUNT.cstreak = 0 end
-  if HUNT.mstreak >= 3 then HUNT.mstreak = 0 end
+-- Grow / shrink the wave by one length; the gauge resets, and
+-- the spawning wave repaints the background.
+function huntGrow()
+  HUNT.length = HUNT.length + 1
+  HUNT.g = 0
 end
 
+-- A demote keeps the gauge two-thirds full, so a child who just
+-- had a bad streak at a comfortable length climbs back quickly.
+function huntShrink()
+  HUNT.length = HUNT.length - 1
+  HUNT.g = math.floor(huntCfg().promote * 2 / 3)
+end
+
+-- The top-length win: the celebratory tune + firework, and the
+-- advance screen (Tab = faster notch / Enter = replay).
+function huntWin()
+  SOUND.wow()
+  fwStart(HUNT)
+  HUNT.phase = "done"
+end
+
+-- A catch fills the gauge: below lmax, +promote grows the wave;
+-- at lmax, +promote opens the win screen. While a teacher-notch
+-- reset is pending, the gauge is frozen (the in-flight wave
+-- finishes for free; the next spawn restarts it).
+function huntGaugeCatch()
+  if HUNT.reset then return end
+  local cfg = huntCfg()
+  if HUNT.length < cfg.lmax then
+    HUNT.g = HUNT.g + 1
+    if HUNT.g >= cfg.promote then huntGrow() end
+  elseif HUNT.g < cfg.promote then
+    HUNT.g = HUNT.g + 1
+    if HUNT.g >= cfg.promote then huntWin() end
+  end
+end
+
+-- A miss drains the gauge: -demote shrinks the wave (above
+-- length 1); at length 1 it floors at demote (no failure).
+function huntGaugeMiss()
+  if HUNT.reset then return end
+  HUNT.g = HUNT.g - 1
+  if HUNT.length > 1 then
+    if HUNT.g <= HUNT_CFG.demote then huntShrink() end
+  elseif HUNT.g < HUNT_CFG.demote then
+    HUNT.g = HUNT_CFG.demote
+  end
+end
+
+-- A non-winning catch plays the bright chime; the winning catch
+-- (gauge full at lmax) plays wow + firework instead (huntWin).
 function huntCatch()
-  huntChime()
   HUNT.count = HUNT.count + 1
-  HUNT.cstreak = HUNT.cstreak + 1
-  HUNT.mstreak = 0
-  huntAdapt()
   HUNT.phase = "caught"
   HUNT.anim = 0
+  huntGaugeCatch()
+  if HUNT.phase ~= "done" then huntChime() end
 end
 
 function huntMiss()
   huntReviewMissed()
-  HUNT.mstreak = HUNT.mstreak + 1
-  HUNT.cstreak = 0
-  huntAdapt()
+  huntGaugeMiss()
   HUNT.phase = "missed"
   HUNT.anim = 0
 end
 
--- Letters land with their bottom on the ground line (not their
--- center), so they sit on the floor instead of sinking through
--- it, leaving the space below the line free for the help hint.
+-- Caps land with their bottom on the ground line (not their
+-- center), so they sit on the floor instead of sinking through.
 function huntWaveHalf()
-  return getGlyphFont(FONT_BIG):getHeight() / 2
+  return HUNT_CAP / 2
 end
 
 function huntTickFall(dt)
@@ -193,6 +285,8 @@ function huntTickGap(dt)
 end
 
 function huntUpdate(dt)
+  fwUpdate(HUNT, dt)
+  if HUNT.phase == "done" then return end
   if HUNT.phase == "fall" then
     huntTickFall(dt)
   else
@@ -200,24 +294,80 @@ function huntUpdate(dt)
   end
 end
 
+function huntDone()
+  return HUNT.phase == "done"
+end
+
+-- Replay the same notch from wave 1; climb steps the notch up
+-- first. Both clear the firework and start a fresh wave.
+function huntReplay()
+  HUNT.length = 1
+  HUNT.g = 0
+  HUNT.count = 0
+  HUNT.fw = { }
+  huntSpawn()
+end
+
+function huntClimb()
+  notchShift("hunt", 1, HUNT_SCENE.lo, HUNT_SCENE.hi)
+  huntReplay()
+end
+
+-- Advance-screen keys: Tab climbs a notch (next game at top,
+-- via the shared helper); Enter|R replays this notch.
+function huntDoneKey(k)
+  if k == "tab" then
+    if gaugeAtTop(HUNT_SCENE) then
+      fkGotoNext(HUNT_SCENE)
+    else
+      huntClimb()
+    end
+  elseif k == "return" or k == "kpenter" or k == "r" then
+    huntReplay()
+  end
+end
+
+-- A non-final correct key ticks softly; the final one completes
+-- the wave (chime or win).
+function huntTypeChar(k)
+  HUNT.typed = HUNT.typed + 1
+  huntCorrect(k)
+  if HUNT.typed >= #HUNT.chars then
+    huntCatch()
+  else
+    SOUND.match()
+  end
+end
+
 function huntKeypressed(k)
+  if huntDone() then
+    huntDoneKey(k)
+    return
+  end
   if HUNT.phase ~= "fall" then return end
   if k == HUNT.chars[HUNT.typed + 1] then
-    HUNT.typed = HUNT.typed + 1
-    huntCorrect(k)
-    if HUNT.typed >= #HUNT.chars then
-      huntCatch()
-    end
+    huntTypeChar(k)
   elseif not isMod(k) and k ~= "capslock" then
+    SOUND.reject()
     HUNT.fumbled = true
   end
 end
 
 -- The notch's speed change is immediate, including the wave in
--- flight (pressing "slower" eases the current letter at once);
--- the length range still applies only on the next spawn.
+-- flight (pressing "slower" eases the current wave now). A real
+-- change defers the reset: the in-flight wave ends at its
+-- length, then the next spawn restarts at length 1 with the
+-- gauge cleared; a done-screen change resumes play instead.
+-- A saturated chord is a no-op.
 function huntOnNotch(delta)
-  notchShift("hunt", delta, -2, 2)
+  local old = notchGet("hunt")
+  notchShift("hunt", delta, HUNT_SCENE.lo, HUNT_SCENE.hi)
+  if notchGet("hunt") == old then return end
+  if huntDone() then
+    huntReplay()
+    return
+  end
+  HUNT.reset = true
   if HUNT.phase == "fall" then
     HUNT.fall = huntCfg().fall
   end
@@ -242,54 +392,55 @@ function huntWaveAnim()
   return 1, 1
 end
 
-function huntDrawBackground()
-  gfx.setColor(COL_SKY)
-  gfx.rectangle("fill", 0, 0, REF_W, REF_H)
+function huntDrawGround()
   gfx.setColor(COL_GROUND)
   gfx.setLineWidth(2)
   gfx.line(0, HUNT_GROUND_Y, REF_W, HUNT_GROUND_Y)
   gfx.setLineWidth(1)
 end
 
-function huntCharColor(i)
+function huntCapColor(i)
   if HUNT.phase == "missed" then return COL_RED end
   if i <= HUNT.typed then return COL_OK end
-  return COL_TEXT
+  return COL_KEY_LABEL
 end
 
-function huntWaveWidth(font)
-  local total = 0
-  for _, ch in ipairs(HUNT.chars) do
-    total = total + font:getWidth(string.upper(ch))
-  end
-  return total
+function huntWaveWidth()
+  local n = #HUNT.chars
+  return n * HUNT_CAP + (n - 1) * HUNT_CAP_GAP
 end
 
--- Draw the wave's letters adjacent (natural widths), so a
--- multi-letter wave reads as one short word, not spaced glyphs.
-function huntDrawChars(font, a)
-  gfx.setFont(font)
-  local fy = HUNT.y - font:getHeight() / 2
-  local x = (REF_W - huntWaveWidth(font)) / 2
+-- One falling cap, drawn through the shared keycap renderer.
+function huntDrawCap(i, ch, x, a)
+  local cell = { x = x, y = HUNT.y - HUNT_CAP / 2,
+    w = HUNT_CAP, h = HUNT_CAP }
+  drawKeycap(cell, {
+    label = string.upper(ch),
+    font = HUNT_CAP_FONT,
+    color = huntCapColor(i),
+    radius = 8, alpha = a
+  })
+end
+
+function huntDrawRow(a)
+  local x = (REF_W - huntWaveWidth()) / 2
   for i, ch in ipairs(HUNT.chars) do
-    local label = string.upper(ch)
-    local col = huntCharColor(i)
-    gfx.setColor(col[1], col[2], col[3], a)
-    gfx.print(label, x, fy)
-    x = x + font:getWidth(label)
+    huntDrawCap(i, ch, x, a)
+    x = x + HUNT_CAP + HUNT_CAP_GAP
   end
 end
 
+-- The whole wave pops (catch) / flashes (miss) as one unit, so
+-- the scale + alpha wrap the row rather than each cap.
 function huntDrawWave()
   local sc, a = huntWaveAnim()
   if a <= 0 then return end
-  local font = getGlyphFont(FONT_BIG)
   local cx = REF_W / 2
   gfx.push()
   gfx.translate(cx, HUNT.y)
   gfx.scale(sc, sc)
   gfx.translate(-cx, -HUNT.y)
-  huntDrawChars(font, a)
+  huntDrawRow(a)
   gfx.pop()
 end
 
@@ -300,9 +451,17 @@ function huntDrawCount()
 end
 
 function huntDraw()
-  huntDrawBackground()
+  if huntDone() then
+    fkDrawDoneScreen(fkDoneTabLabel(nil, HUNT_SCENE))
+    fwDraw(HUNT)
+    return
+  end
+  huntDrawGround()
   huntDrawWave()
+  drawWinGauge(HUNT.g, huntCfg().promote)
   huntDrawCount()
+  fwDraw(HUNT)
+  fkDrawExitHint()
 end
 
 registerScene("hunt", {
@@ -310,5 +469,6 @@ registerScene("hunt", {
   update = huntUpdate,
   draw = huntDraw,
   keypressed = huntKeypressed,
-  onNotch = huntOnNotch
+  onNotch = huntOnNotch,
+  noHint = huntDone
 })

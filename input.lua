@@ -80,6 +80,14 @@ function appKeypressed(k)
   INPUT.held[k] = true
   inputUpdateMods()
   if reservedChord(k) then return end
+  -- Alt+P toggles the modal pause; while paused, swallow all
+  -- other input (the reserved chords above still work, so
+  -- Shift+Esc can leave). Alt+P parallels the Alt+H help key.
+  if k == "p" and INPUT.alt and not INPUT.ctrl then
+    pauseToggle()
+    return
+  end
+  if PAUSED then return end
   if k == "h" and INPUT.alt and not INPUT.ctrl then
     -- Alt+H is the held help peek; consume it (do not let H
     -- reach the scene as game input). The overlay is drawn
@@ -100,6 +108,7 @@ function appKeyreleased(k)
 end
 
 function appTextinput(t)
+  if PAUSED then return end
   dbgLog("TI " .. t .. " sh=" .. tostring(INPUT.shift))
   if isAlphaChar(t) then
     capsReconcile(t, INPUT.shift)

@@ -55,9 +55,9 @@ dofile("gauge.lua")
 dofile("scene.lua")
 dofile("input.lua")
 dofile("help.lua")
+dofile("pause.lua")
 dofile("firework.lua")
 dofile("findkey.lua")
-dofile("huntadapt.lua")
 dofile("intro.lua")
 dofile("menu.lua")
 
@@ -88,8 +88,9 @@ function updateStep(dt)
   -- The pastel background eases every frame, even while a help
   -- overlay pauses the game underneath.
   pastelTick(dt)
-  -- An open help overlay pauses the active game; it resumes
-  -- when dismissed (docs/compy-ux-principles.md).
+  -- A modal pause (Alt+P) or an open help overlay freezes the
+  -- active game; it resumes on dismiss (see ux-principles).
+  if PAUSED then return end
   if helpOverlayShown() then return end
   sceneUpdate(dt)
 end
@@ -105,7 +106,11 @@ end
 -- centered to the real resolution. Nothing scrolls.
 function drawStep()
   sceneDraw()
-  drawHelpLayer()
+  if PAUSED then
+    drawPauseOverlay()
+  else
+    drawHelpLayer()
+  end
 end
 
 function love.draw()

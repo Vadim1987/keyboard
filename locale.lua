@@ -21,6 +21,7 @@ LOCALE.en = {
   replay = "Enter or R → play again",
   help_hint = "Hold Alt+H for help",
   back_hint = "Shift+Esc → menu",
+  paused = "Paused",
   games = {
     press = "Press the key",
     find = "Find the key",
@@ -31,12 +32,15 @@ LOCALE.en = {
   },
   help = {
     press = "Press the key that glows.\n\n"
+      .. "Alt+P  pause\n"
       .. "Shift+Esc  back to the menu\n"
       .. "Ctrl+Alt+↑/↓  change difficulty",
     find = "Find the key shown above, then press it.\n\n"
+      .. "Alt+P  pause\n"
       .. "Shift+Esc  back to the menu\n"
       .. "Ctrl+Alt+↑/↓  change difficulty",
     hunt = "Type each falling letter before it lands.\n\n"
+      .. "Alt+P  pause\n"
       .. "Shift+Esc  back to the menu\n"
       .. "Ctrl+Alt+↑ faster   Ctrl+Alt+↓ slower",
     caps = "Type the letter shown above.\n\n"

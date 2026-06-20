@@ -55,8 +55,7 @@ function shiftSymEnter()
 end
 
 function shiftSymAuto(outcome)
-  local d = notchAutoResult("shift_symbols", -2, 2, outcome,
-    CAPS_HINT_COOLDOWN)
+  local d = notchAutoResult("shift_symbols", -2, 2, outcome)
   if d ~= 0 then shiftSymShuffle() end
 end
 

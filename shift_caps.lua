@@ -72,8 +72,7 @@ function shiftCapsWant()
 end
 
 function shiftCapsAuto(outcome)
-  local d = notchAutoResult("shift_caps", -2, 2, outcome,
-    CAPS_HINT_COOLDOWN)
+  local d = notchAutoResult("shift_caps", -2, 2, outcome)
   if d ~= 0 then shiftCapsShuffle() end
 end
 

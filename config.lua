@@ -17,9 +17,13 @@ COL_DIM = { 0.50, 0.50, 0.48 }
 COL_IND_ON = { 0.16, 0.60, 0.32 }
 COL_OK = { 0.16, 0.60, 0.32 }
 COL_RED = { 0.85, 0.30, 0.25 }
+-- Soft pink for the brief wrong-key glow (find-key games): a
+-- gentle "not that one" marker, less saturated than COL_RED
+-- (which Compy reserves for errors) and fainter than the warm
+-- target glow.
+COL_PINK = { 0.95, 0.52, 0.62, 0.70 }
 COL_BURST = { 0.98, 0.50, 0.05 }
 COL_OVERLAY = { 0.95, 0.95, 0.92, 0.88 }
-COL_SKY = { 0.80, 0.88, 0.96 }
 COL_GROUND = { 0.55, 0.60, 0.52 }
 
 -- Per-notch pastel backgrounds: the Compy palette ramp, mild
@@ -147,24 +151,31 @@ GAUGE_MISS_BUDGET = 4
 HUNT_SPAWN_Y = 24
 HUNT_GROUND_Y = 492
 
--- Streak-based length adaptation (5 caught in a row -> +1, 3
--- missed in a row -> -1; see huntadapt.lua). review_hits = the
--- correct presses needed to retire a missed key from review.
+-- Signed wave-length gauge: each catch adds 1, each miss
+-- subtracts 1. Per-notch `promote` (reached) grows the wave
+-- a length, or at lmax opens the win screen; `demote` (reached
+-- above length 1) shrinks it. review_hits = the correct presses
+-- to retire a missed key from review; gap = the pause between
+-- waves (after a catch or a miss).
 HUNT_CFG = {
-  review_hits = 3,
-  gap = 0.5
+  review_hits = 1,
+  gap = 0.5,
+  demote = -3
 }
 
 -- Fall times (seconds top-to-bottom), tuned slow for 4-6
--- beginners. The notch sets speed + the length CEILING (lmax);
--- every notch keeps the floor at 1 (lmin), so a longer wave is
--- earned only by a catch streak, never forced by the notch.
+-- beginners. The notch sets speed + the length CEILING (lmax) +
+-- the gauge `promote` threshold; the floor is always length 1,
+-- so a longer wave is earned through the gauge, never forced.
+-- The promotes keep catches-to-win (promote * lmax =
+-- 12/12/24/30/48) short, since each catch is a multi-key wave
+-- (keystrokes-to-win = promote * lmax(lmax+1)/2).
 HUNT_NOTCH = { }
-HUNT_NOTCH[-2] = { fall = 16.0, lmin = 1, lmax = 1 }
-HUNT_NOTCH[-1] = { fall = 12.0, lmin = 1, lmax = 1 }
-HUNT_NOTCH[0] = { fall = 10.0, lmin = 1, lmax = 3 }
-HUNT_NOTCH[1] = { fall = 7.0, lmin = 1, lmax = 3 }
-HUNT_NOTCH[2] = { fall = 5.0, lmin = 1, lmax = 3 }
+HUNT_NOTCH[-2] = { fall = 16.0, lmax = 2, promote = 6 }
+HUNT_NOTCH[-1] = { fall = 12.0, lmax = 2, promote = 6 }
+HUNT_NOTCH[0] = { fall = 10.0, lmax = 3, promote = 8 }
+HUNT_NOTCH[1] = { fall = 7.0, lmax = 3, promote = 10 }
+HUNT_NOTCH[2] = { fall = 5.0, lmax = 4, promote = 12 }
 
 -- Hunt characters: letters + digits only (no distinctive or
 -- punctuation), from central + numbers + remaining_letters.

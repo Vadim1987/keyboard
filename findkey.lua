@@ -9,8 +9,10 @@
 -- the target key; Find passes none).
 
 function fkEnter(st, cfg)
+  notchEnterReset(cfg.id)
   st.pulse = 0
   st.burst = nil
+  st.wrong = nil
   st.fw = { }
   gaugeEnter(st, cfg)
 end
@@ -21,6 +23,10 @@ function fkUpdate(st, cfg, dt)
   if st.burst then
     st.burst.t = st.burst.t - dt
     if st.burst.t <= 0 then st.burst = nil end
+  end
+  if st.wrong then
+    st.wrong.t = st.wrong.t - dt
+    if st.wrong.t <= 0 then st.wrong = nil end
   end
   gaugeTick(st, cfg, dt)
 end
@@ -113,6 +119,8 @@ function fkKeypressed(st, cfg, k)
   if k == gaugeCurrent(st) then
     fkHit(st, cfg, k)
   elseif not isMod(k) and k ~= "capslock" then
+    SOUND.reject()
+    st.wrong = { key = k, t = 0.3 }
     gaugeOnWrong(st, cfg)
   end
 end
@@ -160,12 +168,24 @@ function fkDrawDoneScreen(tabLabel)
     getFont(FONT_STATUS), COL_DIM)
 end
 
+-- The brief wrong-key pink glow, but never over an existing
+-- decoration (e.g. a fresh target glow on the same key after a
+-- DROP reshuffle).
+function fkWrongDeco(st, deco)
+  local w = st.wrong
+  if w and not deco[w.key] then
+    deco[w.key] = { glow = COL_PINK }
+  end
+end
+
 -- The shared draw skeleton. deco is the per-key keyboard
--- decoration (Press glows the target key; Find passes { }); the
--- keycap target shows while a target is live in either game.
+-- decoration (Press glows the target key; Find passes { }); a
+-- brief pink glow marks the last wrong key. The keycap target
+-- shows while a target is live in either game.
 function fkDraw(st, cfg, deco)
   local glow = gaugeGlowing(st)
   local done = fkDone(st)
+  fkWrongDeco(st, deco)
   drawKeyboard(deco)
   if glow then drawKeycapTarget(gaugeCurrent(st)) end
   if st.burst then drawBurst(st.burst) end

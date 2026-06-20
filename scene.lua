@@ -40,6 +40,7 @@ function gotoScene(id)
   ACTIVE = id
   -- Default background; a pastel scene overrides it in enter().
   pastelClear()
+  pauseClear()
   local s = SCENES[id]
   if s and s.enter then s.enter() end
 end

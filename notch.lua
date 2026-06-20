@@ -1,8 +1,8 @@
 -- Shared difficulty-notch core. Per-scene notch value, teacher
 -- chord shift saturating at the scene's declared bounds, and
--- reset-to-0 at program start. Choose/Find/Hunt drive the notch
--- by teacher chord (and Hunt's streak length); Caps/Shift add
--- the auto-match adapter below (the notch shifts itself).
+-- reset-to-0 at program start. Press/Find/Hunt drive the notch
+-- by teacher chord; Caps/Shift add the auto-match adapter below
+-- (the notch shifts itself).
 
 NOTCH = { }
 
@@ -22,6 +22,15 @@ function notchShift(id, delta, lo, hi)
   if v > hi then v = hi end
   NOTCH[id] = v
   return v
+end
+
+-- Re-entry policy for player-facing-notch games: a climbed
+-- notch (>= 0) resets to 0 each fresh entry (a clean climb),
+-- but an eased notch (< 0, set by the teacher or reached by
+-- struggling) is preserved -- min(notch, 0). Teacher-only-notch
+-- games skip this and keep their notch.
+function notchEnterReset(id)
+  NOTCH[id] = math.min(NOTCH[id] or 0, 0)
 end
 
 -- Auto-match adapter (Caps/Shift): the notch shifts itself on
@@ -65,8 +74,9 @@ end
 
 -- Record one target's outcome ("clean" / "struggle" / "none").
 -- Returns the signed notch change (0 if none); on a real change
--- the counters reset and the cooldown arms.
-function notchAutoResult(id, lo, hi, outcome, cooldown)
+-- the counters reset and the cooldown arms (CAPS_HINT_COOLDOWN,
+-- the one shared auto-match window).
+function notchAutoResult(id, lo, hi, outcome)
   notchAutoCount(id, outcome)
   local a = NOTCH_AUTO[id]
   if a.cd > 0 then return 0 end
@@ -76,6 +86,6 @@ function notchAutoResult(id, lo, hi, outcome, cooldown)
   notchShift(id, d, lo, hi)
   notchAutoReset(id)
   if notchGet(id) == old then return 0 end
-  NOTCH_AUTO[id].cd = cooldown
+  NOTCH_AUTO[id].cd = CAPS_HINT_COOLDOWN
   return notchGet(id) - old
 end

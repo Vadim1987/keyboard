@@ -69,8 +69,7 @@ end
 -- Auto-match the notch from this target's result; a change
 -- reshuffles for the new letter set.
 function capsAuto(outcome)
-  local d = notchAutoResult("caps", -2, 2, outcome,
-    CAPS_HINT_COOLDOWN)
+  local d = notchAutoResult("caps", -2, 2, outcome)
   if d ~= 0 then capsShuffle() end
 end
 

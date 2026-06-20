@@ -1,7 +1,8 @@
 -- Shared sound palette. Maps gentle game EVENTS to compy.audio
 -- samples by meaning, so callers say what happened rather than
 -- which sample plays (and the mapping can change in one place).
--- There is deliberately no failure or wrong-key sound.
+-- The one "input not accepted" cue is a soft neutral knock --
+-- informative, never a scold (see SOUND.reject).
 
 sfx = compy.audio
 
@@ -27,4 +28,17 @@ end
 -- The biggest win, at the top notch: wow.ogg.
 function SOUND.wow()
   sfx.wow()
+end
+
+-- Input not accepted (a wrong key, or an unmapped menu key): a
+-- soft neutral knock -- the same dull "bump" as the typewriter
+-- tick, carrying no negative valence. Informative, not a scold;
+-- never a buzzer, never a tally.
+function SOUND.reject()
+  sfx.knock()
+end
+
+-- Entering or leaving the modal pause: a soft toggle blip.
+function SOUND.pause()
+  sfx.toggle()
 end
