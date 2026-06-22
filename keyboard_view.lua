@@ -175,7 +175,7 @@ end
 function kbLabel(name)
   local l = KB_LABEL[name]
   if l then return l end
-  if KB_SHIFTLABEL and SHIFT_MAP[name] then
+  if KB_SHIFTLABEL and INPUT.shift and SHIFT_MAP[name] then
     return SHIFT_MAP[name]
   end
   if #name == 1 then
@@ -263,9 +263,10 @@ function kbRaised(dec)
   return dec and (dec.pulse or dec.glow)
 end
 
--- livecase = letter keycaps follow effective Caps/Shift case
--- (Caps game). shiftlabel = number/punctuation keys show their
--- shifted symbol (Symbols game). Other scenes pass nil.
+-- livecase = letter keycaps follow effective Caps/Shift case.
+-- shiftlabel = number/punct keys show their shifted symbol
+-- ONLY while a Shift key is held (Alt characters), so the label
+-- never lies about current output. Other scenes pass nil.
 function drawKeyboard(deco, livecase, shiftlabel)
   KB_LIVECASE = livecase
   KB_SHIFTLABEL = shiftlabel
@@ -304,13 +305,20 @@ function kbTargetCell(label, font)
   return cell
 end
 
-function drawKeycapTarget(name)
-  local label = kbTargetLabel(name)
-  local big = #label == 1 or KB_ARROW[name]
+-- Draw a top-band target cap from an already-resolved label;
+-- big picks the large monospace glyph font (single glyph) over
+-- the smaller one (multi-letter labels: Space, Bksp). Shared by
+-- the find-key target (by key name) and Alt (by glyph).
+function drawTargetCap(label, big)
   local font = big and KCAP_T_BIG or KCAP_T_SMALL
   drawKeycap(kbTargetCell(label, font), {
     label = label, font = font, radius = 8
   })
+end
+
+function drawKeycapTarget(name)
+  local label = kbTargetLabel(name)
+  drawTargetCap(label, #label == 1 or KB_ARROW[name])
 end
 
 -- Expanding-ring success burst, b = { x, y, t } with t in

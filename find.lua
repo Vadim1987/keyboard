@@ -4,7 +4,7 @@
 -- NOT highlighted: the child reads the board and hunts for the
 -- key shown as a keycap in the top band. Case and Shift state
 -- are ignored -- the correct physical key is accepted however
--- it is pressed. Same chime, burst, gauge, advance screen, and
+-- it is pressed. Same chime, burst, gauge, level-up screen, and
 -- per-notch pastel as Press; the only difference is no glow.
 
 FIND = { pulse = 0, burst = nil, fw = { } }
@@ -12,7 +12,9 @@ FIND_CFG = {
   id = "find",
   notch = PRESS_NOTCH,
   lo = PRESS_LO,
-  hi = PRESS_HI
+  hi = PRESS_HI,
+  g = PRESS_G,
+  gtop = PRESS_GTOP
 }
 
 function findEnter()

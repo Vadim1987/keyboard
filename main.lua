@@ -34,7 +34,9 @@ function dbgLogErr(where, err)
 end
 
 -- Reset the log + record the save dir (pcall'd at boot so a
--- restricted filesystem can never block startup).
+-- restricted filesystem can never block startup). Read logs via
+-- `adb logcat | grep KBD` -- the save dir is not pullable under
+-- Android scoped storage.
 function dbgBoot()
   love.filesystem.write(DBG_LOG, "=== boot ===\n")
   dbgLog("save dir " .. love.filesystem.getSaveDirectory())
@@ -47,7 +49,6 @@ dofile("pastel.lua")
 dofile("locale.lua")
 dofile("layout.lua")
 dofile("sound.lua")
-dofile("shuffle.lua")
 dofile("keyboard_view.lua")
 dofile("indicators.lua")
 dofile("notch.lua")
@@ -58,6 +59,7 @@ dofile("help.lua")
 dofile("pause.lua")
 dofile("firework.lua")
 dofile("findkey.lua")
+dofile("hints.lua")
 dofile("intro.lua")
 dofile("menu.lua")
 
@@ -66,9 +68,7 @@ dofile("menu.lua")
 SCENE_FILE.press = "press.lua"
 SCENE_FILE.find = "find.lua"
 SCENE_FILE.hunt = "hunt.lua"
-SCENE_FILE.caps = "caps.lua"
-SCENE_FILE.shift_caps = "shift_caps.lua"
-SCENE_FILE.shift_symbols = "shift_symbols.lua"
+SCENE_FILE.alt = "alt.lua"
 
 notchInit()
 inputInit()
@@ -88,8 +88,9 @@ function updateStep(dt)
   -- The pastel background eases every frame, even while a help
   -- overlay pauses the game underneath.
   pastelTick(dt)
-  -- A modal pause (Alt+P) or an open help overlay freezes the
-  -- active game; it resumes on dismiss (see ux-principles).
+  -- A modal pause (Alt+P, timed games only) or an open help
+  -- overlay (held Alt+H) freezes the active game; it resumes on
+  -- dismiss.
   if PAUSED then return end
   if helpOverlayShown() then return end
   sceneUpdate(dt)

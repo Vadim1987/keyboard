@@ -40,7 +40,6 @@ PASTEL_FADE = 0.3
 
 -- Key sets (LOVE key constants).
 KEYSETS = { }
-KEYSETS.central4 = { "f", "g", "h", "j" }
 KEYSETS.central = {
   "f", "g", "h", "j", "d",
   "k", "s", "l", "a"
@@ -54,13 +53,8 @@ KEYSETS.remaining_letters = {
   "u", "i", "o", "p", "z", "x",
   "c", "v", "b", "n", "m"
 }
--- Caps/Shift letter sets. central_common = the central row plus
--- the common letters E T R U I O P C M N; full_alphabet = every
--- letter (central + remaining), built at load.
-KEYSETS.central_common = {
-  "f", "g", "h", "j", "d", "k", "s", "l", "a",
-  "e", "t", "r", "u", "i", "o", "p", "c", "m", "n"
-}
+-- full_alphabet = every letter (central + remaining), built at
+-- load; the Alt exercise reuses it for its lowercase set.
 KEYSETS.full_alphabet = { }
 for _, k in ipairs(KEYSETS.central) do
   KEYSETS.full_alphabet[#KEYSETS.full_alphabet + 1] = k
@@ -96,8 +90,7 @@ KEYSETS.press_punct = {
 -- Fixed menu order (ids). Display labels are localized in
 -- locale.lua.
 MENU_ORDER = {
-  "press", "find", "hunt",
-  "caps", "shift_caps", "shift_symbols"
+  "press", "find", "hunt", "alt"
 }
 
 -- Typewriter welcome timing. The heading is a fixed Latin
@@ -109,41 +102,30 @@ WELCOME = {
   letter_beat = 0.6
 }
 
--- Calm pause beat for the success chime + burst in the legacy
--- big-letter / symbol scenes (caps, shift_caps, shift_symbols),
--- retired at the Alt slice. The find-key drills use per-notch
--- pacing from PRESS_NOTCH instead.
-CF_PAUSE = 0.5
-
--- Press the key, round-gauge model. Notch -2..+2 grows the key
--- set by physical row and sets the inter-target pause (delay
--- after a correct press; each key stays untimed). A round is
--- won by clearing the WHOLE set (every key cleaned on the first
--- try). `add` lists the groups this notch adds on top.
+-- Press the key, press-count model. Notch -2..+2 grows the key
+-- set by physical row; `add` lists the groups a notch adds on
+-- top of the lower notches. Each key is untimed.
 PRESS_LO = -2
 PRESS_HI = 2
 PRESS_NOTCH = { }
-PRESS_NOTCH[-2] = {
-  add = { "press_space", "home_row" }, pause = 0.75
-}
-PRESS_NOTCH[-1] = {
-  add = { "bottom_row" }, pause = 0.5
-}
-PRESS_NOTCH[0] = {
-  add = { "top_row", "press_enter_back" }, pause = 0.25
-}
-PRESS_NOTCH[1] = {
-  add = { "numbers", "press_tab" }, pause = 0.25
-}
-PRESS_NOTCH[2] = {
-  add = { "press_punct" }, pause = 0
-}
+PRESS_NOTCH[-2] = { add = { "press_space", "home_row" } }
+PRESS_NOTCH[-1] = { add = { "bottom_row" } }
+PRESS_NOTCH[0] = { add = { "top_row", "press_enter_back" } }
+PRESS_NOTCH[1] = { add = { "numbers", "press_tab" } }
+PRESS_NOTCH[2] = { add = { "press_punct" } }
 
--- Round-gauge: misses in a round that drop the notch by 1. A
--- round ends only by WIN (whole set cleared first-try) or DROP
--- (this many misses). Fumbled keys requeue; the round ends when
--- every key is cleared, not by a fixed count.
-GAUGE_MISS_BUDGET = 4
+-- Press-count learning engine (gauge.lua). G is the review
+-- FLOOR: a level needs max(G, its mandatory count) first-try
+-- hits, so the gauge always covers every new glyph (the reserve
+-- rule) and G only adds review -- correct for any level size,
+-- including the 29-key default Press/Find entry. GTOP raises
+-- the floor at the top notch. GAUGE_LOWN_BIAS skews selection
+-- toward low-press glyphs. All tunable on-device.
+PRESS_G = 15
+PRESS_GTOP = 25
+ALT_G = 30
+ALT_GTOP = 45
+GAUGE_LOWN_BIAS = 4
 
 -- Hunt the falling objects. Reference-canvas y bounds for the
 -- fall, the rolling-window config, and the notch table (notch =
@@ -190,32 +172,77 @@ for _, k in ipairs(KEYSETS.remaining_letters) do
   HUNT_CHARS[#HUNT_CHARS + 1] = k
 end
 
--- Big letters (Caps Lock). Each notch picks a letter set, a
--- case mode (mixed = some lowercase targets too), how strongly
--- the Caps Lock key is hinted, and whether the pause shortens.
--- The notch auto-matches (notch.lua): 3 clean -> up, 2 struggle
--- -> down, >=15 s cooldown. CAPS_HINT_COOLDOWN is that window.
-CAPS_HINT_COOLDOWN = 15
-CAPS_NOTCH = { }
-CAPS_NOTCH[-2] = {
-  set = "central4", mixed = false, hint = "always"
-}
-CAPS_NOTCH[-1] = {
-  set = "central_common", mixed = false, hint = "always"
-}
-CAPS_NOTCH[0] = {
-  set = "full_alphabet", mixed = true, hint = "wrong"
-}
-CAPS_NOTCH[1] = {
-  set = "full_alphabet", mixed = true, hint = "off"
-}
-CAPS_NOTCH[2] = {
-  set = "full_alphabet", mixed = true, hint = "off", fast = true
+-- Alt characters. Press-count engine over produced GLYPHS, not
+-- physical keys. Five notches add ~15 new glyphs each, growing
+-- alphanumeric -> capitals/punctuation, with the non-printing
+-- service keys last. Each notch ADDS a glyph group; the
+-- available set is the floor..notch union. The non-printing key
+-- targets (Backspace/Tab/Enter, matched via keypressed) live in
+-- ALT_KEYTARGET (alt.lua); space is a normal produced glyph.
+ALT_LO = 0
+ALT_HI = 4
+
+-- Lowercase split 15 + 11 (home-row-first order from
+-- full_alphabet); capitals split 5 + 14 + 7; digits 4 + 6.
+ALT_LOWER_A = { }
+ALT_LOWER_B = { }
+for i, k in ipairs(KEYSETS.full_alphabet) do
+  if i <= 15 then ALT_LOWER_A[#ALT_LOWER_A + 1] = k
+  else ALT_LOWER_B[#ALT_LOWER_B + 1] = k end
+end
+-- Uppercase A-Z (same order), then split 5 + 14 + 7 by notch.
+ALT_UPPER = { }
+for _, k in ipairs(KEYSETS.full_alphabet) do
+  ALT_UPPER[#ALT_UPPER + 1] = string.upper(k)
+end
+ALT_UPPER_A = { }
+ALT_UPPER_B = { }
+ALT_UPPER_C = { }
+for i, k in ipairs(ALT_UPPER) do
+  if i <= 5 then ALT_UPPER_A[#ALT_UPPER_A + 1] = k
+  elseif i <= 19 then ALT_UPPER_B[#ALT_UPPER_B + 1] = k
+  else ALT_UPPER_C[#ALT_UPPER_C + 1] = k end
+end
+ALT_DIGITS_A = { "1", "2", "3", "4" }
+ALT_DIGITS_B = { "5", "6", "7", "8", "9", "0" }
+ALT_PUNCT_A = { ".", ",", "/" }
+ALT_PUNCT_B = { "!", "?", ":" }
+ALT_SPACE = { " " }
+ALT_SERVICE = { "return", "backspace", "tab" }
+
+-- Glyph groups by name, unioned into the available set.
+ALT_GROUPS = {
+  lower_a = ALT_LOWER_A, lower_b = ALT_LOWER_B,
+  digits_a = ALT_DIGITS_A, digits_b = ALT_DIGITS_B,
+  upper_a = ALT_UPPER_A, upper_b = ALT_UPPER_B,
+  upper_c = ALT_UPPER_C, punct_a = ALT_PUNCT_A,
+  punct_b = ALT_PUNCT_B, space = ALT_SPACE,
+  service = ALT_SERVICE
 }
 
--- Symbols with Shift. SHIFT_MAP: the symbol a base key makes
--- with Shift held; used for targets, the base-key hint, and the
--- shifted keycap labels. Caps Lock does not affect these.
+-- Notch 0..4, start 0. Notches 0-1 are alphanumeric; capitals
+-- and punctuation mix in from notch 2; the service keys land at
+-- the top. `groups` are ADDED at that notch.
+ALT_NOTCH = { }
+ALT_NOTCH[0] = { groups = { "lower_a" } }
+ALT_NOTCH[1] = { groups = { "lower_b", "digits_a" } }
+ALT_NOTCH[2] = {
+  groups = { "digits_b", "punct_a", "space", "upper_a" }
+}
+ALT_NOTCH[3] = { groups = { "upper_b" } }
+ALT_NOTCH[4] = {
+  groups = { "punct_b", "upper_c", "service" }
+}
+
+-- Shift-hint budget. The first ALT_HINT_FIRST Shift-requiring
+-- targets of an entry are hinted (the first is forced to be
+-- one); the teacher chord (Ctrl+Alt+H) re-arms ALT_HINT_MORE.
+ALT_HINT_FIRST = 4
+ALT_HINT_MORE = 3
+
+-- SHIFT_MAP: the symbol a base key makes with Shift held. Used
+-- by Alt for symbol targets' base keys and by the live-case
+-- keyboard's Shift-gated symbol labels.
 SHIFT_MAP = {
   ["1"] = "!", ["2"] = "@", ["3"] = "#", ["4"] = "$",
   ["5"] = "%", ["6"] = "^", ["7"] = "&", ["8"] = "*",
@@ -224,28 +251,3 @@ SHIFT_MAP = {
   [";"] = ":", ["'"] = "\"", [","] = "<", ["."] = ">",
   ["/"] = "?"
 }
-
--- Symbol target sets as BASE KEYS (target = SHIFT_MAP[base]).
-SYM_SETS = { }
-SYM_SETS.intro = { "1", "/" }
-SYM_SETS.small = { "1", "/", ",", "." }
-SYM_SETS.numbers = {
-  "1", "2", "3", "4", "5", "6", "7", "8", "9", "0"
-}
-SYM_SETS.plus = {
-  "1", "2", "3", "4", "5", "6", "7", "8", "9", "0",
-  "/", "-", "=", ";", ",", ".", "'"
-}
-SYM_SETS.full = {
-  "1", "2", "3", "4", "5", "6", "7", "8", "9", "0",
-  "`", "-", "=", "\\", ";", "'", ",", ".", "/", "[", "]"
-}
-
--- Notch sets the symbol set + how the base+Shift pair is hinted
--- ("always" / "miss" = only after a wrong try / "off").
-SYMBOL_NOTCH = { }
-SYMBOL_NOTCH[-2] = { set = "intro", hint = "always" }
-SYMBOL_NOTCH[-1] = { set = "small", hint = "always" }
-SYMBOL_NOTCH[0] = { set = "numbers", hint = "miss" }
-SYMBOL_NOTCH[1] = { set = "plus", hint = "off" }
-SYMBOL_NOTCH[2] = { set = "full", hint = "off" }

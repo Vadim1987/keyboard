@@ -1,12 +1,19 @@
--- Round-gauge core for the untimed find-key exercises. A round
--- is a race: clear the WHOLE set first-try to WIN; else
--- GAUGE_MISS_BUDGET fumbled targets DROP (-1, silent). A clean
--- key leaves the pool; a fumbled key requeues, so the round
--- ends only by WIN (pool empty) or DROP. A WIN shows the
--- completion/advance screen (phase "done"); the scene reads
--- st.event ("levelup" / "win") to play the sound + firework.
--- The notch changes on Tab (climb), DROP, or a teacher chord,
--- never on the win. cfg holds { id, notch, lo, hi }.
+-- Press-count learning engine for the untimed find-key drills
+-- (Press, Find, Alt). Every target token -- a physical key for
+-- Press/Find, a produced glyph for Alt -- carries a learning
+-- record in st.learn[token] = { n, last }:
+--   n     its first-try press count (n == 0 means MANDATORY: a
+--         new token not yet cleared first-try),
+--   last  st.lturn (a global clock) when it was last shown.
+-- Availability is the current notch's set (gaugeAvail), so a
+-- token outside it is simply never drawn while its record
+-- survives. The gauge fills with first-try hits this level to
+-- st.goal; filling it steps the notch up into a fresh level,
+-- learning PRESERVED. A miss never fills the gauge and only
+-- floors the token's count, so a learned token never falls back
+-- to mandatory. There is no auto demotion (teacher-only down),
+-- no inter-target pause. cfg holds
+-- { id, lo, hi, g, gtop, notch?, master?, prefer? }.
 
 function gaugeAddGroup(out, g)
   for _, k in ipairs(KEYSETS[g]) do
@@ -14,161 +21,203 @@ function gaugeAddGroup(out, g)
   end
 end
 
-function gaugeBuildMaster(st, cfg)
-  st.master = { }
-  for k = cfg.lo, notchGet(cfg.id) do
+-- The available token list at the current notch: cfg.master
+-- builds it for glyph targets (Alt); otherwise union the notch
+-- ladder groups (Press/Find) over floor..notch.
+function gaugeAvail(cfg)
+  local out = { }
+  local notch = notchGet(cfg.id)
+  if cfg.master then
+    cfg.master(out, notch)
+    return out
+  end
+  for k = cfg.lo, notch do
     for _, g in ipairs(cfg.notch[k].add) do
-      gaugeAddGroup(st.master, g)
+      gaugeAddGroup(out, g)
+    end
+  end
+  return out
+end
+
+-- Seed a learning record (n = 0 mandatory) for every newly
+-- available token. Tokens already learned keep their counts, so
+-- a notch change never resets progress.
+function gaugeSeed(st, cfg)
+  for _, k in ipairs(gaugeAvail(cfg)) do
+    if not st.learn[k] then
+      st.learn[k] = { n = 0, last = 0 }
     end
   end
 end
 
-function gaugeShuffle(t)
-  for i = #t, 2, -1 do
-    local j = love.math.random(1, i)
-    t[i], t[j] = t[j], t[i]
-  end
-end
-
-function gaugeRefillPool(st)
-  st.pool = { }
-  for _, k in ipairs(st.master) do
-    st.pool[#st.pool + 1] = k
-  end
-  gaugeShuffle(st.pool)
-end
-
-function gaugeResetCounts(st)
-  st.covered = 0
-  st.misses = 0
-  st.clean = true
-end
-
-function gaugeStartRound(st, cfg)
-  gaugeBuildMaster(st, cfg)
-  gaugeRefillPool(st)
-  gaugeResetCounts(st)
-  st.total = #st.master
-end
-
--- Snap the pastel to the current notch and start a fresh round.
-function gaugeEnter(st, cfg)
-  st.event = nil
-  pastelLevel(notchGet(cfg.id) - cfg.lo)
-  pastelSnap()
-  gaugeStartRound(st, cfg)
-  st.phase = "glow"
-  st.pause = 0
-end
-
 function gaugeCurrent(st)
-  return st.pool[1]
+  return st.cur
 end
 
 function gaugeGlowing(st)
   return st.phase == "glow"
 end
 
-function gaugeClearCurrent(st)
-  table.remove(st.pool, 1)
-end
-
-function gaugeRequeueCurrent(st)
-  local k = table.remove(st.pool, 1)
-  local n = #st.pool
-  local pos = 1
-  if n >= 1 then pos = love.math.random(2, n + 1) end
-  table.insert(st.pool, pos, k)
-end
-
--- WIN: a round cleared first-try -> the advance screen (phase
--- "done"). Below top -> a level-up cue (win.ogg), and Tab steps
--- up; at top -> the celebratory tune + firework, and Tab moves
--- on. The win never changes the notch (Tab/DROP/teacher do).
-function gaugeWin(st, cfg)
-  if notchGet(cfg.id) < cfg.hi then
-    st.event = "levelup"
-  else
-    st.event = "win"
-  end
-  st.phase = "done"
-end
-
 function gaugeAtTop(cfg)
   return notchGet(cfg.id) >= cfg.hi
 end
 
--- Play again from the advance screen: a fresh round at the
--- current notch (same notch, so the pastel is unchanged).
-function gaugeReplay(st, cfg)
-  st.event = nil
-  gaugeStartRound(st, cfg)
-  st.phase = "glow"
-  st.pause = 0
-end
-
--- DROP: silent -1 notch (or stay at the floor), fresh round.
-function gaugeDrop(st, cfg)
-  if notchGet(cfg.id) > cfg.lo then
-    notchShift(cfg.id, -1, cfg.lo, cfg.hi)
-    pastelLevel(notchGet(cfg.id) - cfg.lo)
+-- The count of available mandatory (n == 0) tokens, for the
+-- reserve rule below.
+function gaugeMandatory(st, list)
+  local m = 0
+  for _, k in ipairs(list) do
+    if st.learn[k].n == 0 then m = m + 1 end
   end
-  gaugeStartRound(st, cfg)
-  st.event = nil
+  return m
+end
+
+-- Reserve: once the remaining budget is down to the mandatory
+-- count, only mandatory tokens may be drawn, so every new token
+-- is first-try-cleared before the gauge can fill.
+function gaugeReserve(st, list)
+  local mand = gaugeMandatory(st, list)
+  return mand > 0 and (st.goal - st.hits) <= mand
+end
+
+function gaugeCollect(st, list, reserve, avoid)
+  local out = { }
+  for _, k in ipairs(list) do
+    local ok = (not reserve) or st.learn[k].n == 0
+    if ok and k ~= avoid then out[#out + 1] = k end
+  end
+  return out
+end
+
+-- Candidates for the next target: avoid an immediate repeat
+-- unless it is the only choice (e.g. a lone reserved item).
+function gaugeCandidates(st, list)
+  local reserve = gaugeReserve(st, list)
+  local out = gaugeCollect(st, list, reserve, st.cur)
+  if #out > 0 then return out end
+  return gaugeCollect(st, list, reserve, nil)
+end
+
+-- Selection weight: rises with how long ago the token was shown
+-- (spacing) and with low press count (GAUGE_LOWN_BIAS), so new
+-- and rusty tokens come up more often.
+function gaugeWeight(st, k)
+  local e = st.learn[k]
+  local age = st.lturn - e.last + 1
+  return age * (1 + GAUGE_LOWN_BIAS / (e.n + 1))
+end
+
+function gaugePick(st, list)
+  local total = 0
+  for _, k in ipairs(list) do
+    total = total + gaugeWeight(st, k)
+  end
+  local r = love.math.random() * total
+  for _, k in ipairs(list) do
+    r = r - gaugeWeight(st, k)
+    if r <= 0 then return k end
+  end
+  return list[#list]
+end
+
+-- Pick and show the next target: bump its recency, advance the
+-- clock, and enter the glow phase. On a level's FIRST target,
+-- cfg.prefer may swap the pick among the RESERVE-FILTERED
+-- candidates (Alt's Shift-hint force-first), so it can never
+-- bypass mandatory-first, before recency is recorded once.
+function gaugeNext(st, cfg)
+  local cands = gaugeCandidates(st, gaugeAvail(cfg))
+  local k = gaugePick(st, cands)
+  if st.fresh and cfg.prefer then
+    k = cfg.prefer(st, cands, k)
+  end
+  st.fresh = false
+  st.cur = k
+  st.learn[k].last = st.lturn
+  st.lturn = st.lturn + 1
+  st.fumbled = false
   st.phase = "glow"
 end
 
-function gaugePauseFor(cfg)
-  return cfg.notch[notchGet(cfg.id)].pause
+-- Start a fresh level: reset the gauge, set the budget (the top
+-- notch gets the larger review floor), seed new tokens, then
+-- STRETCH the goal up to the mandatory count so the gauge can
+-- never fill while a new token is uncleared (the reserve
+-- guarantee, robust to a teacher notch bump mid-level). cfg.g
+-- is only a review floor. st.fresh lets prefer bias the first
+-- pick (Alt's Shift-hint force-first).
+function gaugeStartLevel(st, cfg)
+  st.hits = 0
+  st.goal = cfg.g
+  if gaugeAtTop(cfg) then st.goal = cfg.gtop end
+  st.event = nil
+  gaugeSeed(st, cfg)
+  local mand = gaugeMandatory(st, gaugeAvail(cfg))
+  if st.goal < mand then st.goal = mand end
+  st.fresh = true
+  gaugeNext(st, cfg)
 end
 
--- Correct key in glow: cover it (clean) or requeue it
--- (fumbled). Covering the last key WINs (-> advance screen);
--- otherwise pause, then the next target glows.
+-- Enter the game from the menu: a clean learning slate, snap
+-- pastel to the current notch, and start the first level.
+function gaugeEnter(st, cfg)
+  st.learn = { }
+  st.lturn = 0
+  pastelLevel(notchGet(cfg.id) - cfg.lo)
+  pastelSnap()
+  gaugeStartLevel(st, cfg)
+end
+
+-- The gauge filled: below the top notch a level-up cue, at the
+-- top the celebration. The advance screen (phase "done") waits
+-- for Tab; the notch itself moves on Tab, never here.
+function gaugeWin(st, cfg)
+  if gaugeAtTop(cfg) then
+    st.event = "win"
+  else
+    st.event = "levelup"
+  end
+  st.phase = "done"
+end
+
+-- A correct key. First-try (no wrong press this presentation):
+-- count the press, fill the gauge, win at the goal. After a
+-- fumble: just advance -- no count, no fill (so a fumbled new
+-- token stays mandatory and returns). Either way the next
+-- glows at once (no inter-target pause).
 function gaugeOnCorrect(st, cfg)
-  if st.clean then
-    st.covered = st.covered + 1
-    gaugeClearCurrent(st)
-    if #st.pool == 0 then
+  if not st.fumbled then
+    local e = st.learn[st.cur]
+    e.n = e.n + 1
+    st.hits = st.hits + 1
+    if st.hits >= st.goal then
       gaugeWin(st, cfg)
       return
     end
-  else
-    gaugeRequeueCurrent(st)
   end
-  st.clean = true
-  st.phase = "pause"
-  st.pause = gaugePauseFor(cfg)
+  gaugeNext(st, cfg)
 end
 
--- First wrong key marks a target fumbled (one miss); the
--- miss budget triggers a drop. Extra wrong keys do not count.
+-- The first wrong key for a target: mark the presentation
+-- fumbled (so several wrong keys read as one miss) and floor
+-- token's count: a mandatory token (n == 0) stays mandatory; a
+-- learned token never falls below 1. Later wrong keys no-op.
 function gaugeOnWrong(st, cfg)
-  if not st.clean then return end
-  st.clean = false
-  st.misses = st.misses + 1
-  if st.misses >= GAUGE_MISS_BUDGET then
-    gaugeDrop(st, cfg)
+  if st.fumbled then return end
+  st.fumbled = true
+  local e = st.learn[st.cur]
+  if e.n > 0 then
+    e.n = math.max(1, e.n - 1)
   end
 end
 
--- Teacher chord: change the notch, fade the pastel, and start a
--- fresh round so the next target is clean (no stale glow).
+-- Teacher chord: shift the notch within bounds and, if it
+-- changed, fade the pastel and start a fresh level. Learning is
+-- PRESERVED (availability moves). A no-op shift is ignored.
 function gaugeOnNotch(st, cfg, delta)
   local old = notchGet(cfg.id)
   notchShift(cfg.id, delta, cfg.lo, cfg.hi)
   if notchGet(cfg.id) == old then return end
   pastelLevel(notchGet(cfg.id) - cfg.lo)
-  gaugeStartRound(st, cfg)
-  st.event = nil
-  st.pause = 0
-  st.phase = "glow"
-end
-
-function gaugeTick(st, cfg, dt)
-  if st.phase ~= "pause" then return end
-  st.pause = st.pause - dt
-  if st.pause > 0 then return end
-  st.event = nil
-  st.phase = "glow"
+  gaugeStartLevel(st, cfg)
 end

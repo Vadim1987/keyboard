@@ -1,14 +1,17 @@
--- Child-invoked pause for the active games: Alt+P toggles a
--- modal freeze. While paused the game gets no updates (state is
--- kept; the child controls resume, no auto-countdown) and a
--- modal overlay shows the resume chord as keycaps (4-6 are
--- non-readers). (UX standard: every active game offers a
--- deliberate pause; reuses the overlay-pause path + keycaps.)
+-- Deliberate pause for the TIMED games. (UX standard: a timed
+-- game keeps things happening while the child is away, so it
+-- offers a pause.) Alt+P toggles a modal freeze on a scene
+-- that sets `timed = true` (Hunt); the untimed find-key drills
+-- have no timer and no pause. While paused the game gets no
+-- updates (state kept; the child controls resume) and a modal
+-- overlay shows the resume chord as keycaps for non-readers.
 
 PAUSED = false
 
+-- Only a timed scene pauses; Alt+P is a no-op elsewhere.
 function pauseToggle()
-  if not isGameScene(ACTIVE) then return end
+  local s = SCENES[ACTIVE]
+  if not (s and s.timed) then return end
   PAUSED = not PAUSED
   SOUND.pause()
 end

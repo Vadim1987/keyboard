@@ -1,18 +1,20 @@
 -- Press the key. The shared keyboard shows one key glowing warm
--- and pulsing; the child presses it. Round-gauge model
+-- and pulsing; the child presses it. Press-count engine
 -- (gauge.lua) driven by the shared find-key scene core
--- (findkey.lua): win a round to reach the advance screen; Tab
--- climbs a notch (advances at the top), Enter|R replays, and it
--- eases down on misses, with a per-notch pastel and pace. The
--- target is also drawn as a keycap in the top band. This scene
--- adds only the glowing target key over the shared core.
+-- (findkey.lua): first-try hits fill the gauge; Tab climbs a
+-- notch (a fresh review level at the top), and the teacher can
+-- ease down, with a per-notch pastel. The target is also drawn
+-- as a keycap in the top band. This scene adds only the glowing
+-- target key over the shared core.
 
 PRESS = { pulse = 0, burst = nil, fw = { } }
 PRESS_CFG = {
   id = "press",
   notch = PRESS_NOTCH,
   lo = PRESS_LO,
-  hi = PRESS_HI
+  hi = PRESS_HI,
+  g = PRESS_G,
+  gtop = PRESS_GTOP
 }
 
 function pressEnter()

@@ -470,5 +470,6 @@ registerScene("hunt", {
   draw = huntDraw,
   keypressed = huntKeypressed,
   onNotch = huntOnNotch,
-  noHint = huntDone
+  noHint = huntDone,
+  timed = true
 })

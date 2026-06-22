@@ -1,12 +1,12 @@
 -- Shared scene core for the untimed find-key drills (Press the
--- key, Find the key). It drives the round-gauge engine
+-- key, Find the key). It drives the press-count learning engine
 -- (gauge.lua), the keycap target, the chime + burst, the
--- firework (firework.lua), the completion/advance screen, and
--- the persistent Shift+Esc hint. Each scene owns a state table
--- (st: pulse, burst, fw, plus the gauge fields) and a cfg
--- ({ id, notch, lo, hi }); the only per-scene difference is the
--- keyboard decoration the scene passes to fkDraw (Press glows
--- the target key; Find passes none).
+-- firework (firework.lua), the level-up screen, and the
+-- persistent Shift+Esc hint. Each scene owns a state table (st:
+-- pulse, burst, fw, plus the gauge fields) and a cfg
+-- ({ id, notch, lo, hi, g, gtop }); the only per-scene
+-- difference is the keyboard decoration the scene passes to
+-- fkDraw (Press glows the target key; Find passes none).
 
 function fkEnter(st, cfg)
   notchEnterReset(cfg.id)
@@ -28,7 +28,6 @@ function fkUpdate(st, cfg, dt)
     st.wrong.t = st.wrong.t - dt
     if st.wrong.t <= 0 then st.wrong = nil end
   end
-  gaugeTick(st, cfg, dt)
 end
 
 -- A round win plays win.ogg; a top-notch win plays wow.ogg and
@@ -57,16 +56,9 @@ function fkDone(st)
   return st.phase == "done"
 end
 
--- Play again from the advance screen: clear the firework and
--- start a fresh round at the current notch.
-function fkReplay(st, cfg)
-  st.fw = { }
-  st.burst = nil
-  gaugeReplay(st, cfg)
-end
-
 -- At the top notch, the next built game (or the menu when this
--- is the last game).
+-- is the last game). Kept for Hunt, which still chains games on
+-- a top win; the gauge games loop their top level instead.
 function fkGotoNext(cfg)
   local nid = nextGameId(cfg.id)
   if nid then
@@ -76,20 +68,22 @@ function fkGotoNext(cfg)
   end
 end
 
--- Tab on the advance screen: below the top notch, step up one
--- notch into a fresh round (the gate up); at the top, move on.
+-- Tab on the level-up screen (gauge games): below the top notch
+-- step up one notch into a fresh level; at the top, another
+-- review level at the same notch (endless). Learning is kept.
 function fkAdvance(st, cfg)
   st.fw = { }
   st.burst = nil
   if gaugeAtTop(cfg) then
-    fkGotoNext(cfg)
+    -- another review level at the same top notch
+    gaugeStartLevel(st, cfg)
   else
     gaugeOnNotch(st, cfg, 1)
   end
 end
 
--- The Tab label: step up a level, or (at the top notch) the
--- next game / the menu when this is the last game.
+-- The cross-game Tab label (Hunt): step up a level, or (at the
+-- top notch) the next game / the menu after the last one.
 function fkDoneTabLabel(st, cfg)
   if not gaugeAtTop(cfg) then
     return STR.tab_level
@@ -100,14 +94,32 @@ function fkDoneTabLabel(st, cfg)
   return STR.tab_menu
 end
 
--- Advance-screen keys: Tab steps up (next game/menu at top);
--- Enter|R replays this notch.
+-- The gauge games' Tab label: step up a level, or keep playing
+-- the endless review level at the top notch.
+function fkLevelTabLabel(cfg)
+  if gaugeAtTop(cfg) then
+    return STR.tab_more
+  end
+  return STR.tab_level
+end
+
+-- Level-up screen key (gauge games): Tab only -- the gauge
+-- always moves forward, so there is no Enter/R replay.
 function fkDoneKey(st, cfg, k)
   if k == "tab" then
     fkAdvance(st, cfg)
-  elseif k == "return" or k == "kpenter" or k == "r" then
-    fkReplay(st, cfg)
   end
+end
+
+-- A wrong key: knock + pink glow only on the FIRST wrong of a
+-- target (so several wrong keys before the right one are one
+-- miss), then the gauge fumble (it floors the token's count).
+function fkWrong(st, cfg, k)
+  if not st.fumbled then
+    SOUND.reject()
+    st.wrong = { key = k, t = 0.3 }
+  end
+  gaugeOnWrong(st, cfg)
 end
 
 function fkKeypressed(st, cfg, k)
@@ -119,9 +131,7 @@ function fkKeypressed(st, cfg, k)
   if k == gaugeCurrent(st) then
     fkHit(st, cfg, k)
   elseif not isMod(k) and k ~= "capslock" then
-    SOUND.reject()
-    st.wrong = { key = k, t = 0.3 }
-    gaugeOnWrong(st, cfg)
+    fkWrong(st, cfg, k)
   end
 end
 
@@ -152,7 +162,7 @@ function fkDrawExitHint()
   gfx.print(txt, 12, y)
 end
 
--- Shared completion screen: a calm compliment + a clear choice
+-- Hunt's completion screen: a calm compliment + a clear choice
 -- (Tab to advance, Enter/R to replay, Shift+Esc to the menu).
 -- tabLabel is caller-supplied (notch-aware).
 function fkDrawDoneScreen(tabLabel)
@@ -166,6 +176,19 @@ function fkDrawDoneScreen(tabLabel)
     getFont(FONT_STATUS), COL_DIM)
   drawBandText(STR.back_hint, { 366, 402 },
     getFont(FONT_STATUS), COL_DIM)
+end
+
+-- The gauge games' level-up screen: only the compliment and the
+-- Tab cue. The replay/exit lines were dropped -- children were
+-- bailing via the Shift+Esc line shown here; the play screen
+-- keeps its own persistent exit hint.
+function fkDrawLevelScreen(tabLabel)
+  gfx.setColor(COL_OVERLAY)
+  gfx.rectangle("fill", 0, 0, REF_W, REF_H)
+  drawBandText(STR.good_job, { 196, 276 },
+    getFont(FONT_HEAD), COL_WARM)
+  drawBandText(tabLabel, { 300, 336 },
+    getFont(FONT_STATUS), COL_TEXT)
 end
 
 -- The brief wrong-key pink glow, but never over an existing
@@ -189,9 +212,9 @@ function fkDraw(st, cfg, deco)
   drawKeyboard(deco)
   if glow then drawKeycapTarget(gaugeCurrent(st)) end
   if st.burst then drawBurst(st.burst) end
-  if not done then drawWinGauge(st.covered, st.total) end
+  if not done then drawWinGauge(st.hits, st.goal) end
   drawIndicators(CAPS_STATE.on)
-  if done then fkDrawDoneScreen(fkDoneTabLabel(st, cfg)) end
+  if done then fkDrawLevelScreen(fkLevelTabLabel(cfg)) end
   fwDraw(st)
   if not done then fkDrawExitHint() end
 end

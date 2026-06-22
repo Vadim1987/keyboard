@@ -18,6 +18,7 @@ LOCALE.en = {
   tab_next = "Tab → next game",
   tab_menu = "Tab → menu",
   tab_level = "Tab → next level",
+  tab_more = "Tab → keep going",
   replay = "Enter or R → play again",
   help_hint = "Hold Alt+H for help",
   back_hint = "Shift+Esc → menu",
@@ -26,32 +27,23 @@ LOCALE.en = {
     press = "Press the key",
     find = "Find the key",
     hunt = "Hunt the falling objects",
-    caps = "Big letters",
-    shift_caps = "Big letters with Shift",
-    shift_symbols = "Symbols with Shift"
+    alt = "Alt characters"
   },
   help = {
     press = "Press the key that glows.\n\n"
-      .. "Alt+P  pause\n"
       .. "Shift+Esc  back to the menu\n"
       .. "Ctrl+Alt+↑/↓  change difficulty",
     find = "Find the key shown above, then press it.\n\n"
-      .. "Alt+P  pause\n"
       .. "Shift+Esc  back to the menu\n"
       .. "Ctrl+Alt+↑/↓  change difficulty",
     hunt = "Type each falling letter before it lands.\n\n"
       .. "Alt+P  pause\n"
       .. "Shift+Esc  back to the menu\n"
       .. "Ctrl+Alt+↑ faster   Ctrl+Alt+↓ slower",
-    caps = "Type the letter shown above.\n\n"
-      .. "Press Caps Lock to make capitals.\n"
-      .. "Shift+Esc  back to the menu",
-    shift_caps = "Make the BIG letter shown above.\n\n"
-      .. "Hold Shift and press the letter.\n"
-      .. "Shift+Esc  back to the menu",
-    shift_symbols = "Make the symbol shown above.\n\n"
-      .. "Hold Shift and press its key.\n"
-      .. "Shift+Esc  back to the menu"
+    alt = "Make the letter or symbol shown above.\n\n"
+      .. "Hold Shift for capitals and symbols.\n"
+      .. "Shift+Esc  back to the menu\n"
+      .. "Ctrl+Alt+↑/↓  change difficulty"
   }
 }
 

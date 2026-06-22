@@ -42,3 +42,10 @@ end
 function SOUND.pause()
   sfx.toggle()
 end
+
+
+-- Re-arming the inline Shift hint (Ctrl+Alt+H): a soft toggle
+-- blip confirming the teacher chord landed.
+function SOUND.hint()
+  sfx.toggle()
+end
