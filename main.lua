@@ -69,6 +69,7 @@ SCENE_FILE.press = "press.lua"
 SCENE_FILE.find = "find.lua"
 SCENE_FILE.hunt = "hunt.lua"
 SCENE_FILE.alt = "alt.lua"
+SCENE_FILE.words = "words.lua"
 
 notchInit()
 inputInit()

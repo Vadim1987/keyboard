@@ -16,6 +16,9 @@ COL_TEXT = { 0.16, 0.16, 0.16 }
 COL_DIM = { 0.50, 0.50, 0.48 }
 COL_IND_ON = { 0.16, 0.60, 0.32 }
 COL_OK = { 0.16, 0.60, 0.32 }
+-- Deep "typed" green for the Words phrase strip: keeps contrast
+-- on every pastel (including the red top notch), unlike COL_OK.
+COL_DONE = { 0.05, 0.32, 0.13 }
 COL_RED = { 0.85, 0.30, 0.25 }
 -- Soft pink for the brief wrong-key glow (find-key games): a
 -- gentle "not that one" marker, less saturated than COL_RED
@@ -90,7 +93,7 @@ KEYSETS.press_punct = {
 -- Fixed menu order (ids). Display labels are localized in
 -- locale.lua.
 MENU_ORDER = {
-  "press", "find", "hunt", "alt"
+  "press", "find", "hunt", "alt", "words"
 }
 
 -- Typewriter welcome timing. The heading is a fixed Latin
@@ -251,3 +254,42 @@ SHIFT_MAP = {
   [";"] = ":", ["'"] = "\"", [","] = "<", ["."] = ">",
   ["/"] = "?"
 }
+
+-- Words and phrases (Exercise 5). An order-2 character Markov
+-- (markov.lua) over a bundled Alice chapter (words_corpus.lua),
+-- the table built at first entry. A low order keeps the words
+-- playfully unreal. Rung = notch 0..4: each rung sets the word
+-- count k (k..kmax), the per-word length range, whether the
+-- line is Capitalized (phrase-initial), and whether it carries
+-- punctuation. Lines are multi-word at every rung; the gauge
+-- fills one notch per word typed cleanly (no learnable token
+-- set -- the per-word count is the whole mechanic). WORDS_G is
+-- the clean-word goal per rung.
+WORDS_LO = 0
+WORDS_HI = 4
+MARKOV_ORDER = 2
+MARKOV_TRIES = 20
+MARKOV_CAP = 28
+WORDS_RUNGS = { }
+WORDS_RUNGS[0] = { k = 3, kmax = 4, lmin = 3, lmax = 6,
+  caps = false, punct = false }
+WORDS_RUNGS[1] = { k = 4, kmax = 5, lmin = 3, lmax = 6,
+  caps = false, punct = false }
+WORDS_RUNGS[2] = { k = 4, kmax = 6, lmin = 3, lmax = 7,
+  caps = false, punct = false }
+WORDS_RUNGS[3] = { k = 5, kmax = 6, lmin = 3, lmax = 7,
+  caps = true, punct = false }
+WORDS_RUNGS[4] = { k = 5, kmax = 6, lmin = 3, lmax = 7,
+  caps = true, punct = true }
+WORDS_G = { }
+WORDS_G[0] = 12
+WORDS_G[1] = 13
+WORDS_G[2] = 14
+WORDS_G[3] = 15
+WORDS_G[4] = 16
+-- Phrase strip: a fixed font size smaller than the keycap
+-- target glyph (KCAP_T_BIG = 40) but well above editor body
+-- text; the generator caps line length to fit REF_W at this
+-- size, with a side margin each edge.
+WORDS_STRIP_PX = 26
+WORDS_STRIP_MARGIN = 36

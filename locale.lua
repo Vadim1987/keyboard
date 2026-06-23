@@ -27,7 +27,8 @@ LOCALE.en = {
     press = "Press the key",
     find = "Find the key",
     hunt = "Hunt the falling objects",
-    alt = "Alt characters"
+    alt = "Alt characters",
+    words = "Words & phrases"
   },
   help = {
     press = "Press the key that glows.\n\n"
@@ -42,6 +43,10 @@ LOCALE.en = {
       .. "Ctrl+Alt+↑ faster   Ctrl+Alt+↓ slower",
     alt = "Make the letter or symbol shown above.\n\n"
       .. "Hold Shift for capitals and symbols.\n"
+      .. "Shift+Esc  back to the menu\n"
+      .. "Ctrl+Alt+↑/↓  change difficulty",
+    words = "Type the word or phrase shown above.\n\n"
+      .. "Hold Shift for a capital.\n"
       .. "Shift+Esc  back to the menu\n"
       .. "Ctrl+Alt+↑/↓  change difficulty"
   }
