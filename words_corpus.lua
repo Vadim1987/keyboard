@@ -2,7 +2,7 @@
 -- Tea-Party) of Alice's Adventures in Wonderland by Lewis
 -- Carroll, 1865, public domain. Plain ASCII; markov.lua
 -- normalizes it to the 27-symbol a-z + space alphabet and
--- builds the order-3 table at first entry. Long-bracket data,
+-- builds the order-2 table at first entry. Long-bracket data,
 -- not code, so its lines are prose, not statements.
 WORDS_CORPUS = [==[
 There was a table set out under a tree in front of the

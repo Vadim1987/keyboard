@@ -1,4 +1,4 @@
--- Order-3 character Markov generator for Words and phrases.
+-- Order-2 character Markov generator for Words and phrases.
 -- Builds a context -> next-char table from the bundled corpus
 -- (words_corpus.lua), normalized to the 27-symbol alphabet
 -- (lowercase a-z + space), at first entry. markovWord samples a
