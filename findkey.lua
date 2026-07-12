@@ -170,10 +170,8 @@ function fkDrawDoneScreen(tabLabel)
   gfx.rectangle("fill", 0, 0, REF_W, REF_H)
   drawBandText(STR.good_job, { 140, 220 },
     getFont(FONT_HEAD), COL_WARM)
-  drawBandText(tabLabel, { 286, 322 },
-    getFont(FONT_STATUS), COL_TEXT)
-  drawBandText(STR.replay, { 326, 362 },
-    getFont(FONT_STATUS), COL_DIM)
+  drawKeyHint("tab", tabLabel, { 286, 322 }, COL_TEXT)
+  drawKeyHint("return", STR.replay, { 326, 362 }, COL_DIM)
   drawBandText(STR.back_hint, { 366, 402 },
     getFont(FONT_STATUS), COL_DIM)
 end
@@ -187,8 +185,7 @@ function fkDrawLevelScreen(tabLabel)
   gfx.rectangle("fill", 0, 0, REF_W, REF_H)
   drawBandText(STR.good_job, { 196, 276 },
     getFont(FONT_HEAD), COL_WARM)
-  drawBandText(tabLabel, { 300, 336 },
-    getFont(FONT_STATUS), COL_TEXT)
+  drawKeyHint("tab", tabLabel, { 300, 336 }, COL_TEXT)
 end
 
 -- The brief wrong-key pink glow, but never over an existing

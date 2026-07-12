@@ -45,8 +45,10 @@ HUNT_SPD = HUNT_SPD_DEF
 
 -- Capital keycaps fall as squares sized from the glyph font, a
 -- small gap apart; the cap bottom lands on the ground line.
-HUNT_CAP_FONT = getGlyphFont(FONT_BIG)
-HUNT_CAP = HUNT_CAP_FONT:getHeight() + 16
+-- Falling caps are enlarged board caps: height in px, width
+-- follows the board letter-cap proportions.
+HUNT_CAP = 56
+HUNT_CAP_W = math.floor(HUNT_CAP * KB_STD_W / KB_STD_H)
 HUNT_CAP_GAP = 6
 
 -- Game-owned catch chime: win.ogg pitched up -- lighter than
@@ -215,7 +217,7 @@ function huntShrink()
 end
 
 -- The top-length win: the celebratory tune + firework, and the
--- advance screen (Tab = faster notch / Enter = replay).
+-- advance screen (Tab = next level / Enter = replay).
 function huntWin()
   SOUND.wow()
   fwStart(HUNT)
@@ -403,16 +405,17 @@ end
 
 function huntWaveWidth()
   local n = #HUNT.chars
-  return n * HUNT_CAP + (n - 1) * HUNT_CAP_GAP
+  return n * HUNT_CAP_W + (n - 1) * HUNT_CAP_GAP
 end
 
--- One falling cap, drawn through the shared keycap renderer.
+-- One falling cap: the engraved board cap, enlarged; the
+-- state ramp colors the engraving (pending/typed/missed).
 function huntDrawCap(i, ch, x, a)
   local cell = { x = x, y = HUNT.y - HUNT_CAP / 2,
-    w = HUNT_CAP, h = HUNT_CAP }
+    w = HUNT_CAP_W, h = HUNT_CAP }
   drawKeycap(cell, {
-    label = string.upper(ch),
-    font = HUNT_CAP_FONT,
+    name = ch,
+    unit = HUNT_CAP / KB_STD_H,
     color = huntCapColor(i),
     alpha = a
   })
@@ -422,7 +425,7 @@ function huntDrawRow(a)
   local x = (REF_W - huntWaveWidth()) / 2
   for i, ch in ipairs(HUNT.chars) do
     huntDrawCap(i, ch, x, a)
-    x = x + HUNT_CAP + HUNT_CAP_GAP
+    x = x + HUNT_CAP_W + HUNT_CAP_GAP
   end
 end
 

@@ -300,20 +300,21 @@ function kcapGlowFrame(cell, opts, a)
   gfx.setLineWidth(1)
 end
 
--- Named board keys engrave via the original cap forms;
--- explicit-label caps (target, Hunt, pause) print centered.
+-- Named caps engrave via the original forms (opts.color can
+-- override the engraving color -- Hunt's state ramp); a bare
+-- label (Alt's glyph target) prints centered.
 function kcapText(cell, opts, a)
   if opts.name then
-    kcapForms(cell, opts.name, opts.unit, a)
+    kcapForms(cell, opts, a)
     return
   end
   kcapLabel(cell, opts, a)
 end
 
-function kcapForms(cell, name, s, a)
-  kcapColor(CAP_LABEL, a)
-  local form = CAP_FORM[name] or capLetter
-  form(cell, name, s, a)
+function kcapForms(cell, opts, a)
+  kcapColor(opts.color or CAP_LABEL, a)
+  local form = CAP_FORM[opts.name] or capLetter
+  form(cell, opts.name, opts.unit, a)
 end
 
 -- The cap face, in the original board style: a sharp black
@@ -395,6 +396,36 @@ function drawKeycapTarget(name)
     name = name,
     unit = KCAP_T_H / KB_STD_H
   })
+end
+
+-- A key-hint line: the engraved cap of the key to press, then
+-- the hint text, centered together in a y-band. The cap is the
+-- picture a non-reading child matches against the board.
+KEYHINT_GAP = 12
+KEYHINT_PAD = 10
+
+function keyHintCapW(name, h)
+  local u = h / KB_STD_H
+  return (KB_WMM[name] or KB_STD_W) * u
+end
+
+function keyHintX(cw, text, font)
+  return (REF_W - cw - KEYHINT_GAP
+    - font:getWidth(text)) / 2
+end
+
+function drawKeyHint(name, text, band, color)
+  local font = getFont(FONT_STATUS)
+  local h = font:getHeight() + KEYHINT_PAD
+  local cw = keyHintCapW(name, h)
+  local x = keyHintX(cw, text, font)
+  local y = band[1] + (band[2] - band[1] - h) / 2
+  drawKeycap({ x = x, y = y, w = cw, h = h },
+    { name = name, unit = h / KB_STD_H })
+  gfx.setFont(font)
+  gfx.setColor(color)
+  gfx.print(text, x + cw + KEYHINT_GAP,
+    y + KEYHINT_PAD / 2)
 end
 
 -- Glyph target cell (Alt): sized from the glyph itself.

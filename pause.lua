@@ -11,9 +11,7 @@ PAUSED = false
 -- Only a timed scene pauses; Alt+P is a no-op elsewhere.
 function pauseToggle()
   local s = SCENES[ACTIVE]
-  if not (s and s.timed) then 
-    return 
-  end
+  if not (s and s.timed) then return end
   PAUSED = not PAUSED
   SOUND.pause()
 end
@@ -25,15 +23,16 @@ end
 
 -- The resume chord (Alt + P) as two centered keycaps.
 function pauseDrawKeys()
-  local font = getFont(FONT_MENU)
   local h = 56
-  local y = 292
+  local u = h / KB_STD_H
+  local wa = KB_SMALL_W * u
+  local wp = KB_STD_W * u
   local gap = 12
-  local x = (REF_W - 90 - 56 - gap) / 2
-  drawKeycap({ x = x, y = y, w = 90, h = h },
-    { label = "Alt", font = font })
-  drawKeycap({ x = x + 90 + gap, y = y, w = 56, h = h },
-    { label = "P", font = font })
+  local x = (REF_W - wa - wp - gap) / 2
+  drawKeycap({ x = x, y = 292, w = wa, h = h },
+    { name = "lalt", unit = u })
+  drawKeycap({ x = x + wa + gap, y = 292, w = wp, h = h },
+    { name = "p", unit = u })
 end
 
 function drawPauseOverlay()
