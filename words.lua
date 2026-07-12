@@ -322,7 +322,7 @@ end
 
 function wordsDraw()
   local done = wordsDone()
-  drawKeyboard({ }, true, true)
+  drawKeyboard({ })
   if not done then wordsDrawPlay() end
   if WORDS.burst then drawBurst(WORDS.burst) end
   drawIndicators(CAPS_STATE.on)

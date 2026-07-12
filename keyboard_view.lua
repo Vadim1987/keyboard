@@ -67,38 +67,6 @@ for _, n in ipairs({ "capslock", "return" }) do
   KB_WMM[n] = KB_WIDE_W
 end
 
--- Display labels for non-character keys.
-KB_LABEL = { }
-KB_LABEL.escape = "Esc"
-KB_LABEL.numlk = "Num"
-KB_LABEL.delete = "Del"
-KB_LABEL.backspace = "Bksp"
-KB_LABEL.tab = "Tab"
-KB_LABEL["return"] = "Enter"
-KB_LABEL.capslock = "Caps"
-KB_LABEL.lshift = "Shift"
-KB_LABEL.rshift = "Shift"
-KB_LABEL.lctrl = "Ctrl"
-KB_LABEL.lalt = "Alt"
-KB_LABEL.menu = "Menu"
-KB_LABEL.fn = "Fn"
-KB_LABEL.zzz = "Zzz"
-KB_LABEL.pause = "Pause"
-KB_LABEL.space = ""
-KB_LABEL.up = "↑"
-KB_LABEL.down = "↓"
-KB_LABEL.left = "←"
-KB_LABEL.right = "→"
-for i = 1, 12 do
-  KB_LABEL["f" .. i] = "F" .. i
-end
-
--- Single-glyph keys that still want the large keycap font even
--- though their label is multi-byte UTF-8.
-KB_ARROW = {
-  up = true, down = true, left = true, right = true
-}
-
 -- Original cap engravings (ported from graphics.lua). Digit
 -- and punctuation caps print the shifted symbol above the
 -- base one; named keys carry their full engraving; letters
@@ -287,34 +255,17 @@ function capFont(px)
   end
   return CAP_FONTS[px]
 end
--- Larger keycap fonts for the top-band target (Press/Find/Alt).
--- Monospace glyph font so 0/O and l/I/1 read clearly when the
--- child must FIND the key (the keyboard picture stays sans).
+-- Top-band target sizing, plus the glyph font for Alt's
+-- produced-glyph targets (monospace so 0/O and l/I/1 read
+-- clearly). Named-key targets engrave instead (below).
 KCAP_T_H = 64
 KCAP_T_BIG = getGlyphFont(40)
-KCAP_T_SMALL = getGlyphFont(26)
 kbBuildCells()
 
 -- Effective case of letter keycaps: upper iff Caps XOR Shift.
 function capsEffectiveUpper()
   if INPUT.shift then return not CAPS_STATE.on end
   return CAPS_STATE.on
-end
-
-function kbLabel(name)
-  local l = KB_LABEL[name]
-  if l then return l end
-  if KB_SHIFTLABEL and INPUT.shift and SHIFT_MAP[name] then
-    return SHIFT_MAP[name]
-  end
-  if #name == 1 then
-    if KB_LIVECASE and isAlphaChar(name)
-        and not capsEffectiveUpper() then
-      return name
-    end
-    return string.upper(name)
-  end
-  return name
 end
 
 -- Shared keycap renderer. drawKeycap(cell, opts) draws ONE cap
@@ -405,12 +356,8 @@ function kbRaised(dec)
   return dec and (dec.pulse or dec.glow)
 end
 
--- livecase/shiftlabel now shape only the top-band target
--- label (kbLabel): board caps are static engravings, like the
--- physical keys. Other scenes pass nil.
-function drawKeyboard(deco, livecase, shiftlabel)
-  KB_LIVECASE = livecase
-  KB_SHIFTLABEL = shiftlabel
+-- Board caps are static engravings, like the physical keys.
+function drawKeyboard(deco)
   for _, c in ipairs(KB.cells) do
     drawKey(c, deco and deco[c.name], 1)
   end
@@ -426,14 +373,31 @@ function keyRect(name)
   return KB.rect[name]
 end
 
--- Target keycap in the top band (Press/Find/Alt). The keyboard
--- picture below carries any glow; this is the calm "what to
--- press" cap. Space shows "Space"; specials use KB_LABEL.
-function kbTargetLabel(name)
-  if name == "space" then return "Space" end
-  return kbLabel(name)
+-- Named-key target in the top band: an ENLARGED COPY of the
+-- board cap, engraved by the same forms -- so a non-reading
+-- child matches pictures, never words. The keyboard picture
+-- below carries any glow; this is the calm "what to press"
+-- cap.
+function kbTargetKeyCell(name)
+  local u = KCAP_T_H / KB_STD_H
+  local w = (KB_WMM[name] or KB_STD_W) * u
+  local band = HEADER_Y1 - HEADER_Y0
+  local cell = { }
+  cell.x = (REF_W - w) / 2
+  cell.y = HEADER_Y0 + (band - KCAP_T_H) / 2
+  cell.w = w
+  cell.h = KCAP_T_H
+  return cell
 end
 
+function drawKeycapTarget(name)
+  drawKeycap(kbTargetKeyCell(name), {
+    name = name,
+    unit = KCAP_T_H / KB_STD_H
+  })
+end
+
+-- Glyph target cell (Alt): sized from the glyph itself.
 function kbTargetCell(label, font)
   local w = font:getWidth(label) + 28
   if w < KCAP_T_H then w = KCAP_T_H end
@@ -446,20 +410,11 @@ function kbTargetCell(label, font)
   return cell
 end
 
--- Draw a top-band target cap from an already-resolved label;
--- big picks the large monospace glyph font (single glyph) over
--- the smaller one (multi-letter labels: Space, Bksp). Shared by
--- the find-key target (by key name) and Alt (by glyph).
-function drawTargetCap(label, big)
-  local font = big and KCAP_T_BIG or KCAP_T_SMALL
-  drawKeycap(kbTargetCell(label, font), {
-    label = label, font = font
+-- Alt's produced-glyph target: a single glyph on a cap.
+function drawTargetCap(label)
+  drawKeycap(kbTargetCell(label, KCAP_T_BIG), {
+    label = label, font = KCAP_T_BIG
   })
-end
-
-function drawKeycapTarget(name)
-  local label = kbTargetLabel(name)
-  drawTargetCap(label, #label == 1 or KB_ARROW[name])
 end
 
 -- Expanding-ring success burst, b = { x, y, t } with t in
