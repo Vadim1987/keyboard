@@ -34,6 +34,15 @@ COL_BURST = { 0.98, 0.50, 0.05 }
 COL_OVERLAY = { 0.95, 0.95, 0.92, 0.88 }
 COL_GROUND = { 0.55, 0.60, 0.52 }
 
+-- Physical-board cap palette, ported from the original
+-- graphics.lua board: black caps, bright-white labels, cyan
+-- Fn/Zzz engravings. The caps fit the standard Color[]
+-- palette (unlike the paper chrome above).
+
+CAP_BG = Color[Color.black]
+CAP_LABEL = Color[Color.white + Color.bright]
+CAP_AUX = Color[Color.cyan]
+
 -- Per-notch pastel backgrounds: the Compy palette ramp, mild
 -- (green) -> serious (red), indexed by level above an
 -- exercise's floor. Hex inlined (paper theme, outside Color[]).
@@ -176,7 +185,6 @@ HUNT_NOTCH[2] = { fall = 6.0, lmax = 3, promote = 12 }
 -- climbs). Larger = slower (fall is seconds top-to-bottom).
 -- The chord steps it; holds while the program runs, resets to
 -- normal (index 2) at program start.
-
 HUNT_SPD_MULT = { 1.4, 1.0, 0.7 }
 HUNT_SPD_LO = 1
 HUNT_SPD_HI = 3

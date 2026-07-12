@@ -3,6 +3,10 @@
 -- keyboard band by a computed scale and origin (no hardcoded
 -- 960px path). drawKeyboard(deco) tints/pulses/glows keys via a
 -- per-key decoration map; keyRect(name) exposes key geometry.
+-- Caps draw in the original board style: black fill, Sarasa
+-- labels, the shifted symbol engraved above the base one.
+
+require("utf8")
 
 KB = { scale = 0, x = 0, y = 0, w = 0, h = 0 }
 KB.cells = { }
@@ -95,6 +99,120 @@ KB_ARROW = {
   up = true, down = true, left = true, right = true
 }
 
+-- Original cap engravings (ported from graphics.lua). Digit
+-- and punctuation caps print the shifted symbol above the
+-- base one; named keys carry their full engraving; letters
+-- print uppercase, like the physical keys.
+
+CAP_NUM_SYM = {
+  "!", "@", "#", "$", "%",
+  "^", "&", "*", "(", [0] = ")"
+}
+CAP_LOWER, CAP_UPPER = { }, { }
+for num, sym in pairs(CAP_NUM_SYM) do
+  local n = "" .. num
+  CAP_LOWER[n] = n
+  CAP_UPPER[n] = sym
+end
+
+function capShift(lower, upper)
+  CAP_LOWER[lower] = lower
+  CAP_UPPER[lower] = upper
+end
+capShift("`", "~")
+capShift("-", "_")
+capShift("=", "+")
+capShift("\\", "|")
+capShift(";", ":")
+capShift(",", "<")
+capShift(".", ">")
+capShift("/", "?")
+capShift("[", "{")
+capShift("]", "}")
+capShift("'", "\"")
+
+-- Original font sizes in millimetres.
+CAP_F1 = 5
+CAP_F2 = 4
+CAP_F3 = 3
+
+-- Board-cap text forms in the original offsets; unit s is
+-- pixels per millimetre of the drawn cap.
+
+function capLetter(cell, name, s)
+  gfx.setFont(capFont(CAP_F1 * s))
+  gfx.print(string.upper(name), cell.x + 2 * s, cell.y + s)
+end
+
+function capDouble(cell, name, s)
+  gfx.setFont(capFont(CAP_F2 * s))
+  gfx.print(CAP_UPPER[name], cell.x + 2 * s, cell.y + s)
+  gfx.print(CAP_LOWER[name], cell.x + 2 * s,
+    cell.y + (2 + CAP_F2) * s)
+end
+
+function capDouble2(cell, name, s)
+  gfx.setFont(capFont(CAP_F3 * s))
+  gfx.print(CAP_UPPER[name], cell.x + s, cell.y + 2 * s)
+  gfx.print(CAP_LOWER[name], cell.x + s,
+    cell.y + (3 + CAP_F3) * s)
+end
+
+function capSingle(cell, name, s)
+  gfx.setFont(capFont(CAP_F3 * s))
+  gfx.print(CAP_UPPER[name], cell.x + s, cell.y + 3 * s)
+end
+
+function capSpace()
+end
+
+-- Fn and Zzz keep their cyan engraving.
+function capAux(cell, name, s, a)
+  kcapColor(CAP_AUX, a)
+  capSingle(cell, name, s)
+end
+
+CAP_FORM = { space = capSpace }
+for name in pairs(CAP_LOWER) do
+  CAP_FORM[name] = capDouble
+end
+
+function capKey(name, label)
+  CAP_UPPER[name] = label
+  CAP_FORM[name] = capSingle
+end
+
+function capKey2(name, up, lo)
+  CAP_UPPER[name] = up
+  CAP_LOWER[name] = lo
+  CAP_FORM[name] = capDouble2
+end
+
+capKey("escape", "Esc")
+capKey("numlk", "Numlk")
+capKey("delete", "Delete")
+capKey("backspace", utf8.char(10229))
+capKey("tab", "Tab " .. utf8.char(8633))
+capKey("return", "Enter")
+capKey("lshift", utf8.char(8679) .. "Shift")
+capKey("rshift", "Shift")
+capKey("lctrl", "Ctrl")
+capKey("lalt", "Alt")
+capKey("menu", utf8.char(9636, 8598))
+capKey("fn", "Fn")
+capKey("zzz", "Zzz")
+capKey("up", utf8.char(8593))
+capKey("left", utf8.char(8592))
+capKey("down", utf8.char(8595))
+capKey("right", utf8.char(8594))
+for i = 1, 12 do
+  capKey("f" .. i, "F" .. i)
+end
+capKey2("capslock", "Caps", "Lock")
+capKey2("pause", "Pause", "Break")
+CAP_FORM.fn = capAux
+CAP_FORM.zzz = capAux
+
 function kbWidthMM(name, ri)
   local w = KB_WMM[name]
   if w then return w end
@@ -156,8 +274,19 @@ function kbBuildCells()
 end
 
 kbComputeScale()
-KCAP_BIG = getFont(math.floor(5 * KB.scale))
-KCAP_SMALL = getFont(math.floor(2.7 * KB.scale))
+
+-- Sarasa Bold, the original board font (a bundled platform
+-- asset: the same path graphics.lua loaded). Cached by pixel
+-- size, so the board and every enlarged cap share fonts.
+CAP_FONT_PATH = "assets/fonts/SarasaGothicJ-Bold.ttf"
+CAP_FONTS = { }
+function capFont(px)
+  px = math.floor(px)
+  if not CAP_FONTS[px] then
+    CAP_FONTS[px] = gfx.newFont(CAP_FONT_PATH, px)
+  end
+  return CAP_FONTS[px]
+end
 -- Larger keycap fonts for the top-band target (Press/Find/Alt).
 -- Monospace glyph font so 0/O and l/I/1 read clearly when the
 -- child must FIND the key (the keyboard picture stays sans).
@@ -191,10 +320,12 @@ end
 -- Shared keycap renderer. drawKeycap(cell, opts) draws ONE cap
 -- at an arbitrary cell { x, y, w, h }: the on-board keys, the
 -- top-band target, and Hunt's falling caps all go through it.
--- opts = { label, font, bg, glow, color, radius, scale, alpha }
--- is required; its fields are optional, but a label needs a
--- font. The caller owns cell geometry, layout, and any
--- glow-layering; this draws a single cap.
+-- opts = { name, unit, label, font, bg, glow, color, scale,
+-- alpha } is required; its fields are optional. A named board
+-- key engraves via the original cap forms (unit = px per mm);
+-- an explicit label prints centered and needs a font. The
+-- caller owns cell geometry, layout, and any glow-layering;
+-- this draws a single cap.
 function kcapColor(c, a)
   gfx.setColor(c[1], c[2], c[3], (c[4] or 1) * a)
 end
@@ -204,30 +335,44 @@ function kcapLabel(cell, opts, a)
   if not label or label == "" then return end
   local font = opts.font
   gfx.setFont(font)
-  kcapColor(opts.color or COL_KEY_LABEL, a)
+  kcapColor(opts.color or CAP_LABEL, a)
   local ty = cell.y + (cell.h - font:getHeight()) / 2
   gfx.printf(label, cell.x, ty, cell.w, "center")
 end
 
-function kcapOutline(cell, opts, r, a)
-  if opts.glow then
-    kcapColor(opts.glow, a)
-    gfx.setLineWidth(3)
-    gfx.rectangle("line", cell.x, cell.y, cell.w, cell.h, r)
-    gfx.setLineWidth(1)
-  else
-    kcapColor(COL_KEY_EDGE, a)
-    gfx.rectangle("line", cell.x, cell.y, cell.w, cell.h, r)
-  end
+-- The glow frame stays: it is the find-target affordance the
+-- original board expressed through key_bg fills.
+function kcapGlowFrame(cell, opts, a)
+  kcapColor(opts.glow, a)
+  gfx.setLineWidth(3)
+  gfx.rectangle("line", cell.x, cell.y, cell.w, cell.h)
+  gfx.setLineWidth(1)
 end
 
-function kcapFace(cell, opts)
-  local r = opts.radius or 5
-  local a = opts.alpha or 1
-  kcapColor(opts.bg or COL_KEY, a)
-  gfx.rectangle("fill", cell.x, cell.y, cell.w, cell.h, r)
-  kcapOutline(cell, opts, r, a)
+-- Named board keys engrave via the original cap forms;
+-- explicit-label caps (target, Hunt, pause) print centered.
+function kcapText(cell, opts, a)
+  if opts.name then
+    kcapForms(cell, opts.name, opts.unit, a)
+    return
+  end
   kcapLabel(cell, opts, a)
+end
+
+function kcapForms(cell, name, s, a)
+  kcapColor(CAP_LABEL, a)
+  local form = CAP_FORM[name] or capLetter
+  form(cell, name, s, a)
+end
+
+-- The cap face, in the original board style: a sharp black
+-- fill, no paper outline or corner rounding.
+function kcapFace(cell, opts)
+  local a = opts.alpha or 1
+  kcapColor(opts.bg or CAP_BG, a)
+  gfx.rectangle("fill", cell.x, cell.y, cell.w, cell.h)
+  if opts.glow then kcapGlowFrame(cell, opts, a) end
+  kcapText(cell, opts, a)
 end
 
 function drawKeycap(cell, opts)
@@ -242,16 +387,13 @@ function drawKeycap(cell, opts)
   gfx.pop()
 end
 
--- On-board key: a thin wrapper over drawKeycap. Label and its
--- size follow the live keyboard rules (kbLabel); dec carries
--- the per-key bg/glow and the pulse scale.
+-- On-board key: the original engraved cap, keyed by name;
+-- dec carries the per-key bg/glow and the pulse scale.
 function drawKey(cell, dec, sc)
-  local label = kbLabel(cell.name)
-  local big = #label == 1 or KB_ARROW[cell.name]
   drawKeycap(cell, {
-    label = label,
-    font = big and KCAP_BIG or KCAP_SMALL,
-    bg = (dec and dec.bg) or COL_KEY,
+    name = cell.name,
+    unit = KB.scale,
+    bg = dec and dec.bg,
     glow = dec and dec.glow,
     scale = sc
   })
@@ -263,10 +405,9 @@ function kbRaised(dec)
   return dec and (dec.pulse or dec.glow)
 end
 
--- livecase = letter keycaps follow effective Caps/Shift case.
--- shiftlabel = number/punct keys show their shifted symbol
--- ONLY while a Shift key is held (Alt characters), so the label
--- never lies about current output. Other scenes pass nil.
+-- livecase/shiftlabel now shape only the top-band target
+-- label (kbLabel): board caps are static engravings, like the
+-- physical keys. Other scenes pass nil.
 function drawKeyboard(deco, livecase, shiftlabel)
   KB_LIVECASE = livecase
   KB_SHIFTLABEL = shiftlabel
@@ -312,7 +453,7 @@ end
 function drawTargetCap(label, big)
   local font = big and KCAP_T_BIG or KCAP_T_SMALL
   drawKeycap(kbTargetCell(label, font), {
-    label = label, font = font, radius = 8
+    label = label, font = font
   })
 end
 

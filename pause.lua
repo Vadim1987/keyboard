@@ -11,7 +11,9 @@ PAUSED = false
 -- Only a timed scene pauses; Alt+P is a no-op elsewhere.
 function pauseToggle()
   local s = SCENES[ACTIVE]
-  if not (s and s.timed) then return end
+  if not (s and s.timed) then 
+    return 
+  end
   PAUSED = not PAUSED
   SOUND.pause()
 end
@@ -29,9 +31,9 @@ function pauseDrawKeys()
   local gap = 12
   local x = (REF_W - 90 - 56 - gap) / 2
   drawKeycap({ x = x, y = y, w = 90, h = h },
-    { label = "Alt", font = font, radius = 8 })
+    { label = "Alt", font = font })
   drawKeycap({ x = x + 90 + gap, y = y, w = 56, h = h },
-    { label = "P", font = font, radius = 8 })
+    { label = "P", font = font })
 end
 
 function drawPauseOverlay()
