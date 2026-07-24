@@ -56,18 +56,6 @@ function fkDone(st)
   return st.phase == "done"
 end
 
--- At the top notch, the next built game (or the menu when this
--- is the last game). Kept for Hunt, which still chains games on
--- a top win; the gauge games loop their top level instead.
-function fkGotoNext(cfg)
-  local nid = nextGameId(cfg.id)
-  if nid then
-    gotoScene(nid)
-  else
-    gotoScene("menu")
-  end
-end
-
 -- Tab on the level-up screen (gauge games): below the top notch
 -- step up one notch into a fresh level; at the top, another
 -- review level at the same notch (endless). Learning is kept.
@@ -80,18 +68,6 @@ function fkAdvance(st, cfg)
   else
     gaugeOnNotch(st, cfg, 1)
   end
-end
-
--- The cross-game Tab label (Hunt): step up a level, or (at the
--- top notch) the next game / the menu after the last one.
-function fkDoneTabLabel(st, cfg)
-  if not gaugeAtTop(cfg) then
-    return STR.tab_level
-  end
-  if nextGameId(cfg.id) then
-    return STR.tab_next
-  end
-  return STR.tab_menu
 end
 
 -- The gauge games' Tab label: step up a level, or keep playing
@@ -162,17 +138,15 @@ function fkDrawExitHint()
   gfx.print(txt, 12, y)
 end
 
--- Hunt's completion screen: a calm compliment + a clear choice
--- (Tab to advance, Enter/R to replay, Shift+Esc to the menu).
--- tabLabel is caller-supplied (notch-aware).
-function fkDrawDoneScreen(tabLabel)
+-- Hunt's completion screen: a calm compliment with Enter/R to
+-- replay and Shift+Esc to return to the menu.
+function fkDrawDoneScreen()
   gfx.setColor(COL_OVERLAY)
   gfx.rectangle("fill", 0, 0, REF_W, REF_H)
   drawBandText(STR.good_job, { 140, 220 },
     getFont(FONT_HEAD), COL_WARM)
-  drawKeyHint("tab", tabLabel, { 286, 322 }, COL_TEXT)
-  drawKeyHint("return", STR.replay, { 326, 362 }, COL_DIM)
-  drawBandText(STR.back_hint, { 366, 402 },
+  drawKeyHint("return", STR.replay, { 306, 346 }, COL_TEXT)
+  drawBandText(STR.back_hint, { 356, 396 },
     getFont(FONT_STATUS), COL_DIM)
 end
 

@@ -1,15 +1,12 @@
 -- Mini-game 3: Hunt the falling objects. Capital keycaps fall
 -- from the top; the child types each before it lands. Full
--- canvas (no keyboard, no indicators). Two independent axes:
--- the win screen climbs a progression notch (-2..+2) that
--- sets the wave-length ceiling lmax (2/3), the gauge promote,
--- and a base fall; the teacher chord scales that fall by a
--- speed step, uniform across all progression levels. The
--- child earns wave length via a signed gauge: a catch adds 1,
--- a miss subtracts 1. Reaching +promote grows the wave a
--- length, or AT lmax opens the win screen (Tab = next level,
--- Enter = replay from wave 1); reaching -3 shrinks it (never
--- below 1). Background pastel tracks the progression notch.
+-- canvas (no keyboard, no indicators). The teacher sets the
+-- speed notch (-2..+2), which also sets the wave-length ceiling
+-- lmax (2/3) and gauge promote. The child earns wave length via
+-- a signed gauge: a catch adds 1, a miss subtracts 1. Reaching
+-- +promote grows the wave a length, or AT lmax opens the win
+-- screen (Enter = replay from wave 1); reaching -3 shrinks it
+-- (never below 1). Background pastel tracks the speed notch.
 -- Missed or
 -- fumbled keys return more often (review). Keys compare as
 -- physical constants (case ignored): a wrong key bumps, a
@@ -32,16 +29,8 @@ HUNT = {
   fw = { }
 }
 
--- Advance-screen config; the shared find-key helpers
--- (gaugeAtTop / fkDoneTabLabel / fkGotoNext) read id/lo/hi.
--- Hunt's notch is now player-facing (the win screen climbs it).
+-- Teacher-controlled speed-notch bounds.
 HUNT_SCENE = { id = "hunt", lo = -2, hi = 2 }
-
--- Teacher speed level: an index into HUNT_SPD_MULT, moved by
--- the chord. File-scope so it holds across re-entry and resets
--- to the default only when the program restarts (this file is
--- loaded once).
-HUNT_SPD = HUNT_SPD_DEF
 
 -- Capital keycaps fall as squares sized from the glyph font, a
 -- small gap apart; the cap bottom lands on the ground line.
@@ -70,17 +59,6 @@ end
 -- The pastel ramp level for the current notch (above floor).
 function huntColorLevel()
   return notchGet("hunt") - HUNT_SCENE.lo
-end
-
--- The current teacher speed multiplier applied to base fall.
-function huntSpeedMult()
-  return HUNT_SPD_MULT[HUNT_SPD]
-end
-
--- Step the speed axis, clamped to its range.
-function huntSpeedShift(delta)
-  local v = HUNT_SPD + delta
-  HUNT_SPD = math.max(HUNT_SPD_LO, math.min(HUNT_SPD_HI, v))
 end
 
 -- A fresh random letter not already used in this wave.
@@ -143,26 +121,38 @@ function huntBuildWave(len)
   return chars
 end
 
+-- Apply a deferred teacher-notch reset at the next spawn. The
+-- in-flight wave finishes without changing the fresh gauge.
+function huntApplyReset()
+  if HUNT.reset then
+    HUNT.length = 1
+    HUNT.g = 0
+    HUNT.count = 0
+    HUNT.reset = false
+  end
+end
+
 -- Spawn the next wave. Length is clamped to the current notch's
 -- lmax, so a notch change takes effect here (never mid-fall).
 -- The background pastel syncs to the current notch.
 function huntSpawn()
   local cfg = huntCfg()
+  huntApplyReset()
   HUNT.length = math.max(1, math.min(HUNT.length, cfg.lmax))
   HUNT.chars = huntBuildWave(HUNT.length)
   HUNT.typed = 0
   HUNT.fumbled = false
   HUNT.y = HUNT_SPAWN_Y
-  HUNT.fall = cfg.fall * huntSpeedMult()
+  HUNT.fall = cfg.fall
   HUNT.phase = "fall"
   HUNT.anim = 0
   pastelLevel(huntColorLevel())
 end
 
 function huntEnter()
-  notchEnterReset("hunt")
   HUNT.length = 1
   HUNT.g = 0
+  HUNT.reset = false
   HUNT.review = { }
   HUNT.prev = { }
   HUNT.count = 0
@@ -216,8 +206,8 @@ function huntShrink()
   HUNT.g = math.floor(huntCfg().promote * 2 / 3)
 end
 
--- The top-length win: the celebratory tune + firework, and the
--- advance screen (Tab = next level / Enter = replay).
+-- The top-length win: celebratory tune + firework, then the
+-- completion screen (Enter = replay).
 function huntWin()
   SOUND.wow()
   fwStart(HUNT)
@@ -227,6 +217,7 @@ end
 -- A catch fills the gauge: below lmax, +promote grows the wave;
 -- at lmax, +promote opens the win screen.
 function huntGaugeCatch()
+  if HUNT.reset then return end
   local cfg = huntCfg()
   if HUNT.length < cfg.lmax then
     HUNT.g = HUNT.g + 1
@@ -240,6 +231,7 @@ end
 -- A miss drains the gauge: -demote shrinks the wave (above
 -- length 1); at length 1 it floors at demote (no failure).
 function huntGaugeMiss()
+  if HUNT.reset then return end
   HUNT.g = HUNT.g - 1
   if HUNT.length > 1 then
     if HUNT.g <= HUNT_CFG.demote then huntShrink() end
@@ -302,8 +294,7 @@ function huntDone()
   return HUNT.phase == "done"
 end
 
--- Replay the same notch from wave 1; climb steps the notch up
--- first. Both clear the firework and start a fresh wave.
+-- Replay the same notch from wave 1.
 function huntReplay()
   HUNT.length = 1
   HUNT.g = 0
@@ -312,21 +303,9 @@ function huntReplay()
   huntSpawn()
 end
 
-function huntClimb()
-  notchShift("hunt", 1, HUNT_SCENE.lo, HUNT_SCENE.hi)
-  huntReplay()
-end
-
--- Advance-screen keys: Tab climbs a notch (next game at top,
--- via the shared helper); Enter|R replays this notch.
+-- Completion-screen keys: Enter|R replays this notch.
 function huntDoneKey(k)
-  if k == "tab" then
-    if gaugeAtTop(HUNT_SCENE) then
-      fkGotoNext(HUNT_SCENE)
-    else
-      huntClimb()
-    end
-  elseif k == "return" or k == "kpenter" or k == "r" then
+  if k == "return" or k == "kpenter" or k == "r" then
     huntReplay()
   end
 end
@@ -357,17 +336,21 @@ function huntKeypressed(k)
   end
 end
 
--- The teacher chord moves the SPEED axis, not the progression
--- notch. The change is immediate: it re-scales the in-flight
--- wave's fall at once (pressing "slower" eases the current wave
--- now). It never resets the gauge or wave length -- speed is
--- independent of progression. A saturated chord is a no-op.
+-- A notch's speed change is immediate, including the wave in
+-- flight. A real change defers the structural reset until the
+-- next spawn; a done-screen change resumes play immediately.
 function huntOnNotch(delta)
-  local old = HUNT_SPD
-  huntSpeedShift(delta)
-  if HUNT_SPD == old then return end
+  local old = notchGet("hunt")
+  notchShift("hunt", delta, HUNT_SCENE.lo, HUNT_SCENE.hi)
+  if notchGet("hunt") == old then return end
+  pastelLevel(huntColorLevel())
+  if huntDone() then
+    huntReplay()
+    return
+  end
+  HUNT.reset = true
   if HUNT.phase == "fall" then
-    HUNT.fall = huntCfg().fall * huntSpeedMult()
+    HUNT.fall = huntCfg().fall
   end
 end
 
@@ -451,7 +434,7 @@ end
 
 function huntDraw()
   if huntDone() then
-    fkDrawDoneScreen(fkDoneTabLabel(nil, HUNT_SCENE))
+    fkDrawDoneScreen()
     fwDraw(HUNT)
     return
   end

@@ -109,6 +109,10 @@ MENU_ORDER = {
   "press", "find", "hunt", "alt", "words"
 }
 
+-- Per-game notch at program start. Unlisted games start at 0.
+
+NOTCH_START = { hunt = -2 }
+
 -- Typewriter welcome timing. The heading is a fixed Latin
 -- wordmark (not localized); the beats are slow enough that a
 -- child sees each key light and its letter appear together.
@@ -174,21 +178,11 @@ HUNT_CFG = {
 -- (keystrokes-to-win = promote * lmax(lmax+1)/2).
 
 HUNT_NOTCH = { }
-HUNT_NOTCH[-2] = { fall = 16.0, lmax = 2, promote = 6 }
-HUNT_NOTCH[-1] = { fall = 12.0, lmax = 2, promote = 6 }
-HUNT_NOTCH[0] = { fall = 10.0, lmax = 3, promote = 8 }
-HUNT_NOTCH[1] = { fall = 7.0, lmax = 3, promote = 10 }
-HUNT_NOTCH[2] = { fall = 6.0, lmax = 3, promote = 12 }
-
--- Teacher speed axis for Hunt: a global multiplier on fall,
--- independent of the progression notch (which the win screen
--- climbs). Larger = slower (fall is seconds top-to-bottom).
--- The chord steps it; holds while the program runs, resets to
--- normal (index 2) at program start.
-HUNT_SPD_MULT = { 1.4, 1.0, 0.7 }
-HUNT_SPD_LO = 1
-HUNT_SPD_HI = 3
-HUNT_SPD_DEF = 2
+HUNT_NOTCH[-2] = { fall = 30.0, lmax = 2, promote = 6 }
+HUNT_NOTCH[-1] = { fall = 24.0, lmax = 2, promote = 6 }
+HUNT_NOTCH[0] = { fall = 18.0, lmax = 3, promote = 8 }
+HUNT_NOTCH[1] = { fall = 14.0, lmax = 3, promote = 10 }
+HUNT_NOTCH[2] = { fall = 10.0, lmax = 3, promote = 12 }
 
 -- Hunt characters: letters + digits only (no distinctive or
 -- punctuation), from central + numbers + remaining_letters.

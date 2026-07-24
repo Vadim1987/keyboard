@@ -49,19 +49,6 @@ function isGameScene(id)
   return MENU_INDEX[id] ~= nil
 end
 
--- The next built game after id in the fixed menu order, or
--- nil if id is the last built game. Used by Tab = advance.
-function nextGameId(id)
-  local idx = MENU_INDEX[id]
-  if not idx then return nil end
-  for i = idx + 1, #MENU_ORDER do
-    if sceneAvailable(MENU_ORDER[i]) then
-      return MENU_ORDER[i]
-    end
-  end
-  return nil
-end
-
 function sceneUpdate(dt)
   local s = SCENES[ACTIVE]
   if s and s.update then s.update(dt) end
