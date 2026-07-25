@@ -26,7 +26,8 @@ LOCALE.en = {
     find = "Find the key",
     hunt = "Hunt the falling objects",
     alt = "Alt characters",
-    words = "Words & phrases"
+    words = "Words & phrases",
+    bubble = "Blow the bubble"
   },
   help = {
     press = "Press the key that glows.\n\n"
@@ -45,6 +46,10 @@ LOCALE.en = {
       .. "Ctrl+Alt+↑/↓  change difficulty",
     words = "Type the word or phrase shown above.\n\n"
       .. "Hold Shift for a capital.\n"
+      .. "Shift+Esc  back to the menu\n"
+      .. "Ctrl+Alt+↑/↓  change difficulty",
+    bubble = "Hold the key that glows to blow up the "
+      .. "bubble.\nLet go while the bubble fits the ring.\n\n"
       .. "Shift+Esc  back to the menu\n"
       .. "Ctrl+Alt+↑/↓  change difficulty"
   }

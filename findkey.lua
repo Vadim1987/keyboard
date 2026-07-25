@@ -175,12 +175,15 @@ end
 -- The shared draw skeleton. deco is the per-key keyboard
 -- decoration (Press glows the target key; Find passes { }); a
 -- brief pink glow marks the last wrong key. The keycap target
--- shows while a target is live in either game.
-function fkDraw(st, cfg, deco)
+-- shows while a target is live in either game. overlay is an
+-- optional scene painter called over the board (Bubble draws
+-- its bubble there); the gauge games pass none.
+function fkDraw(st, cfg, deco, overlay)
   local glow = gaugeGlowing(st)
   local done = fkDone(st)
   fkWrongDeco(st, deco)
   drawKeyboard(deco)
+  if overlay then overlay() end
   if glow then drawKeycapTarget(gaugeCurrent(st)) end
   if st.burst then drawBurst(st.burst) end
   if not done then drawWinGauge(st.hits, st.goal) end

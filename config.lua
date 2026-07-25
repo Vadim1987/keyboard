@@ -106,12 +106,15 @@ KEYSETS.press_tab = { "tab" }
 -- locale.lua.
 
 MENU_ORDER = {
-  "press", "find", "hunt", "alt", "words"
+  "press", "find", "hunt", "alt", "words", "bubble"
 }
 
 -- Per-game notch at program start. Unlisted games start at 0.
 
-NOTCH_START = { hunt = -2 }
+NOTCH_START = {
+  hunt = -2,
+  bubble = -2
+}
 
 -- Typewriter welcome timing. The heading is a fixed Latin
 -- wordmark (not localized); the beats are slow enough that a
@@ -327,3 +330,35 @@ WORDS_G[4] = 16
 
 WORDS_STRIP_PX = 26
 WORDS_STRIP_MARGIN = 36
+
+-- Blow the bubble. The child HOLDS the target key to inflate a
+-- bubble over that key and releases while its edge is inside
+-- the ring band. RIPE is the fixed time to reach the inner
+-- ring; the notch only narrows the window that follows, so a
+-- level asks for a finer release, never a different picture.
+-- A hold is slower than a press, so the goals are shorter than
+-- the Press ones. All tunable on-device.
+
+BUBBLE_G = 10
+BUBBLE_GTOP = 14
+BUBBLE_RIPE = 1.0
+
+-- Release windows by notch (seconds after RIPE). The ladder is
+-- the Press key ladder, so the notch grows the key set and
+-- tightens the window together.
+
+BUBBLE_WINDOW = { }
+BUBBLE_WINDOW[-2] = 1.2
+BUBBLE_WINDOW[-1] = 0.9
+BUBBLE_WINDOW[0] = 0.7
+BUBBLE_WINDOW[1] = 0.5
+
+-- Bubble geometry (reference px) and effect timings. R0 is the
+-- radius at the moment of the press; RIPE_R the inner ring.
+
+BUBBLE_R0 = 8
+BUBBLE_RIPE_R = 52
+BUBBLE_FLY_T = 0.45
+BUBBLE_FLY_RISE = 70
+BUBBLE_POP_T = 0.3
+BUBBLE_POP_GROW = 0.6

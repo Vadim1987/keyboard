@@ -77,6 +77,7 @@ SCENE_FILE.find = "find.lua"
 SCENE_FILE.hunt = "hunt.lua"
 SCENE_FILE.alt = "alt.lua"
 SCENE_FILE.words = "words.lua"
+SCENE_FILE.bubble = "bubble.lua"
 
 notchInit()
 inputInit()
