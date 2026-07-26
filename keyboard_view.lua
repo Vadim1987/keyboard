@@ -271,12 +271,13 @@ end
 -- Shared keycap renderer. drawKeycap(cell, opts) draws ONE cap
 -- at an arbitrary cell { x, y, w, h }: the on-board keys, the
 -- top-band target, and Hunt's falling caps all go through it.
--- opts = { name, unit, label, font, bg, glow, color, scale,
--- alpha } is required; its fields are optional. A named board
--- key engraves via the original cap forms (unit = px per mm);
--- an explicit label prints centered and needs a font. The
--- caller owns cell geometry, layout, and any glow-layering;
--- this draws a single cap.
+-- opts = { name, unit, label, font, bg, glow, halo, color,
+-- scale, alpha } is required; its fields are optional. A named
+-- board key engraves via the original cap forms (unit = px per
+-- mm); an explicit label prints centered and needs a font. glow
+-- frames the cap edge, halo radiates outside it. The caller
+-- owns cell geometry, layout, and any glow-layering; this draws
+-- a single cap.
 function kcapColor(c, a)
   gfx.setColor(c[1], c[2], c[3], (c[4] or 1) * a)
 end
@@ -289,6 +290,32 @@ function kcapLabel(cell, opts, a)
   kcapColor(opts.color or CAP_LABEL, a)
   local ty = cell.y + (cell.h - font:getHeight()) / 2
   gfx.printf(label, cell.x, ty, cell.w, "center")
+end
+
+-- A soft radiance OUTSIDE the cap: concentric frames stepping
+-- out, each fainter, so a cap can be marked by class without
+-- touching its black face or its engraving (a falling cap the
+-- child must skip, or one to catch). Distinct from the glow
+-- frame, which sits on the cap edge.
+
+CAP_HALO_LAYERS = 3
+CAP_HALO_STEP = 5
+CAP_HALO_ALPHA = 0.5
+
+function kcapHaloRing(cell, c, a, i)
+  local d = CAP_HALO_STEP * i
+  kcapColor(c, a)
+  gfx.setLineWidth(CAP_HALO_STEP)
+  gfx.rectangle("line", cell.x - d, cell.y - d,
+    cell.w + d * 2, cell.h + d * 2)
+  gfx.setLineWidth(1)
+end
+
+function kcapHalo(cell, c, a)
+  for i = 1, CAP_HALO_LAYERS do
+    local fade = 1 - (i - 1) / CAP_HALO_LAYERS
+    kcapHaloRing(cell, c, a * fade * CAP_HALO_ALPHA, i)
+  end
 end
 
 -- The glow frame stays: it is the find-target affordance the
@@ -321,6 +348,7 @@ end
 -- fill, no paper outline or corner rounding.
 function kcapFace(cell, opts)
   local a = opts.alpha or 1
+  if opts.halo then kcapHalo(cell, opts.halo, a) end
   kcapColor(opts.bg or CAP_BG, a)
   gfx.rectangle("fill", cell.x, cell.y, cell.w, cell.h)
   if opts.glow then kcapGlowFrame(cell, opts, a) end
@@ -459,6 +487,35 @@ function drawBurst(b)
   gfx.circle("line", b.x, b.y, rad)
   gfx.circle("line", b.x, b.y, rad * 0.55)
   gfx.setLineWidth(1)
+end
+
+-- The bang: a blast at a cap the child should not have pressed.
+-- An expanding red ring with shards thrown out -- bigger and
+-- sharper than the catch burst, so a forbidden press reads as
+-- an event, not a near-miss. b = { x, y, t }.
+
+BANG_T = 0.45
+BANG_R = 70
+BANG_SHARDS = 8
+BANG_SHARD_R = 11
+
+function bangShard(b, i, p)
+  local ang = (i / BANG_SHARDS) * 2 * math.pi
+  local d = BANG_R * (0.4 + p * 0.8)
+  gfx.circle("fill", b.x + math.cos(ang) * d,
+    b.y + math.sin(ang) * d, BANG_SHARD_R * (1 - p))
+end
+
+function drawBang(b)
+  local a = b.t / BANG_T
+  local p = 1 - a
+  kcapColor(COL_RED, a)
+  gfx.setLineWidth(4)
+  gfx.circle("line", b.x, b.y, BANG_R * p)
+  gfx.setLineWidth(1)
+  for i = 1, BANG_SHARDS do
+    bangShard(b, i, p)
+  end
 end
 
 -- Subtle win-gauge: a vertical thermometer in the right margin

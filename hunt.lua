@@ -1,5 +1,6 @@
 -- Mini-game 3: Hunt the falling objects. Capital keycaps fall
--- from the top; the child types each before it lands. Full
+-- from the top; the child types them, in ANY order, before
+-- they land. Full
 -- canvas (no keyboard, no indicators). The teacher sets the
 -- speed notch (-2..+2), which also sets the wave-length ceiling
 -- lmax (2/3) and gauge promote. The child earns wave length via
@@ -7,13 +8,15 @@
 -- +promote grows the wave a length, or AT lmax opens the win
 -- screen (Enter = replay from wave 1); reaching -3 shrinks it
 -- (never below 1). Background pastel tracks the speed notch.
--- Missed or
--- fumbled keys return more often (review). Keys compare as
--- physical constants (case ignored): a wrong key bumps, a
--- missed wave flashes red.
+-- Missed keys return more often (review), and a wrong press
+-- books both the key pressed and one it stood in for. Keys
+-- compare as physical constants (case ignored): a wrong key
+-- bumps, a missed wave flashes red.
 
 HUNT = {
   chars = { },
+  done = { },
+  forbid = { },
   typed = 0,
   fumbled = false,
   y = 0,
@@ -30,7 +33,14 @@ HUNT = {
 }
 
 -- Teacher-controlled speed-notch bounds.
-HUNT_SCENE = { id = "hunt", lo = -2, hi = 2 }
+-- The falling-caps engine serves two scenes -- Hunt and Skip
+-- the red ones -- one at a time, so the running game is state.
+-- A game carries its own notch id (so progress is per game) and
+-- whether its waves mix in forbidden caps.
+
+HUNT_SCENE = { id = "hunt", lo = -2, hi = 2, forbid = false }
+SKIP_SCENE = { id = "skip", lo = -2, hi = 2, forbid = true }
+HUNT_GAME = HUNT_SCENE
 
 -- Capital keycaps fall as squares sized from the glyph font, a
 -- small gap apart; the cap bottom lands on the ground line.
@@ -53,12 +63,12 @@ function huntChime()
 end
 
 function huntCfg()
-  return HUNT_NOTCH[notchGet("hunt")]
+  return HUNT_NOTCH[notchGet(HUNT_GAME.id)]
 end
 
 -- The pastel ramp level for the current notch (above floor).
 function huntColorLevel()
-  return notchGet("hunt") - HUNT_SCENE.lo
+  return notchGet(HUNT_GAME.id) - HUNT_GAME.lo
 end
 
 -- A fresh random letter not already used in this wave.
@@ -121,6 +131,30 @@ function huntBuildWave(len)
   return chars
 end
 
+-- Skip the red ones: mark caps forbidden. One wave never goes
+-- all-forbidden -- there is always at least one cap to catch,
+-- so a wave is always winnable. A lone cap is never forbidden
+-- (nothing to do but wait, which reads as a stall).
+function huntShuffledSlots(len)
+  local idx = { }
+  for i = 1, len do idx[i] = i end
+  for i = len, 2, -1 do
+    local j = love.math.random(1, i)
+    idx[i], idx[j] = idx[j], idx[i]
+  end
+  return idx
+end
+
+function huntMarkForbidden(len)
+  local out = { }
+  if not HUNT_GAME.forbid or len < 2 then return out end
+  local idx = huntShuffledSlots(len)
+  for i = 1, love.math.random(1, len - 1) do
+    out[idx[i]] = true
+  end
+  return out
+end
+
 -- Apply a deferred teacher-notch reset at the next spawn. The
 -- in-flight wave finishes without changing the fresh gauge.
 function huntApplyReset()
@@ -140,6 +174,9 @@ function huntSpawn()
   huntApplyReset()
   HUNT.length = math.max(1, math.min(HUNT.length, cfg.lmax))
   HUNT.chars = huntBuildWave(HUNT.length)
+  HUNT.forbid = huntMarkForbidden(HUNT.length)
+  HUNT.done = { }
+  HUNT.bang = nil
   HUNT.typed = 0
   HUNT.fumbled = false
   HUNT.y = HUNT_SPAWN_Y
@@ -149,7 +186,8 @@ function huntSpawn()
   pastelLevel(huntColorLevel())
 end
 
-function huntEnter()
+function huntEnter(game)
+  HUNT_GAME = game
   HUNT.length = 1
   HUNT.g = 0
   HUNT.reset = false
@@ -173,23 +211,59 @@ function huntReviewHit(ch)
   end
 end
 
--- The untyped keys of a missed wave go into review.
+-- The caps to catch in this wave; forbidden ones do not count,
+-- they are there to be left alone.
+function huntWanted()
+  local n = 0
+  for i = 1, #HUNT.chars do
+    if not HUNT.forbid[i] then n = n + 1 end
+  end
+  return n
+end
+
+-- A cap still standing and meant to be caught.
+function huntPending(i)
+  return not HUNT.done[i] and not HUNT.forbid[i]
+end
+
+-- The keys still standing when a wave is missed go to review.
+-- A forbidden cap is not a miss: it was never to be pressed.
 function huntReviewMissed()
-  for i = HUNT.typed + 1, #HUNT.chars do
-    HUNT.review[HUNT.chars[i]] = HUNT_CFG.review_hits
+  for i, ch in ipairs(HUNT.chars) do
+    if huntPending(i) then
+      HUNT.review[ch] = HUNT_CFG.review_hits
+    end
   end
 end
 
--- A correct keystroke (first-try mastery, as in Press/Find): a
--- clean one progresses the letter out of review; one typed only
--- after a wrong press marks it hard and (re)adds it.
+-- First-try mastery, as in Press/Find: a clean press retires
+-- the letter from review; once a wave is fumbled nothing in it
+-- retires, since the wrong press already booked the review.
 function huntCorrect(ch)
-  if HUNT.fumbled then
-    HUNT.review[ch] = HUNT_CFG.review_hits
-    HUNT.fumbled = false
-  else
-    huntReviewHit(ch)
+  if HUNT.fumbled then return end
+  huntReviewHit(ch)
+end
+
+-- The leftmost cap still standing: with a free order any
+-- standing cap was fair, so this is the one a wrong press
+-- stood in for.
+function huntStanding()
+  for i, ch in ipairs(HUNT.chars) do
+    if huntPending(i) then return ch end
   end
+  return nil
+end
+
+-- The first wrong press of a wave books BOTH keys into review:
+-- the one pressed and the one it stood in for. Later wrong
+-- presses in the same wave only knock.
+function huntWrongPress(k)
+  SOUND.reject()
+  if HUNT.fumbled then return end
+  HUNT.fumbled = true
+  HUNT.review[k] = HUNT_CFG.review_hits
+  local ch = huntStanding()
+  if ch then HUNT.review[ch] = HUNT_CFG.review_hits end
 end
 
 -- Grow / shrink the wave by one length; the gauge resets, and
@@ -280,8 +354,14 @@ function huntTickGap(dt)
   end
 end
 
+function huntTickBang(dt)
+  HUNT.bang.t = HUNT.bang.t - dt
+  if HUNT.bang.t <= 0 then HUNT.bang = nil end
+end
+
 function huntUpdate(dt)
   fwUpdate(HUNT, dt)
+  if HUNT.bang then huntTickBang(dt) end
   if HUNT.phase == "done" then return end
   if HUNT.phase == "fall" then
     huntTickFall(dt)
@@ -310,16 +390,41 @@ function huntDoneKey(k)
   end
 end
 
+-- A standing cap for this key, or nil. With a free order the
+-- leftmost matching cap is taken, so a repeated letter clears
+-- left to right.
+function huntFindCap(k)
+  for i, ch in ipairs(HUNT.chars) do
+    if ch == k and not HUNT.done[i] then return i end
+  end
+  return nil
+end
+
 -- A non-final correct key ticks softly; the final one completes
 -- the wave (chime or win).
-function huntTypeChar(k)
+function huntTypeCap(i, k)
+  HUNT.done[i] = true
   HUNT.typed = HUNT.typed + 1
   huntCorrect(k)
-  if HUNT.typed >= #HUNT.chars then
+  if HUNT.typed >= huntWanted() then
     huntCatch()
   else
     SOUND.match()
   end
+end
+
+-- Pressing a forbidden cap: the bang at that cap, the key into
+-- review, and the wave is lost at once -- leaving it alone was
+-- the whole task, so there is nothing left to finish.
+function huntBangAt(i)
+  HUNT.bang = {
+    x = huntCapX(i) + HUNT_CAP_W / 2,
+    y = HUNT.y,
+    t = BANG_T
+  }
+  SOUND.reject()
+  HUNT.review[HUNT.chars[i]] = HUNT_CFG.review_hits
+  huntMiss()
 end
 
 function huntKeypressed(k)
@@ -328,11 +433,13 @@ function huntKeypressed(k)
     return
   end
   if HUNT.phase ~= "fall" then return end
-  if k == HUNT.chars[HUNT.typed + 1] then
-    huntTypeChar(k)
+  local i = huntFindCap(k)
+  if i and HUNT.forbid[i] then
+    huntBangAt(i)
+  elseif i then
+    huntTypeCap(i, k)
   elseif not isMod(k) and k ~= "capslock" then
-    SOUND.reject()
-    HUNT.fumbled = true
+    huntWrongPress(k)
   end
 end
 
@@ -340,9 +447,9 @@ end
 -- flight. A real change defers the structural reset until the
 -- next spawn; a done-screen change resumes play immediately.
 function huntOnNotch(delta)
-  local old = notchGet("hunt")
-  notchShift("hunt", delta, HUNT_SCENE.lo, HUNT_SCENE.hi)
-  if notchGet("hunt") == old then return end
+  local old = notchGet(HUNT_GAME.id)
+  notchShift(HUNT_GAME.id, delta, HUNT_GAME.lo, HUNT_GAME.hi)
+  if notchGet(HUNT_GAME.id) == old then return end
   pastelLevel(huntColorLevel())
   if huntDone() then
     huntReplay()
@@ -382,7 +489,7 @@ end
 
 function huntCapColor(i)
   if HUNT.phase == "missed" then return COL_RED end
-  if i <= HUNT.typed then return COL_OK end
+  if HUNT.done[i] then return COL_OK end
   return CAP_LABEL
 end
 
@@ -393,6 +500,15 @@ end
 
 -- One falling cap: the engraved board cap, enlarged; the
 -- state ramp colors the engraving (pending/typed/missed).
+-- Skip the red ones marks every cap by class: red around the
+-- ones to leave, a fainter green around the ones to catch, so
+-- the red reads first in a mixed row. Hunt marks nothing.
+function huntCapHalo(i)
+  if not HUNT_GAME.forbid then return nil end
+  if HUNT.forbid[i] then return SKIP_FORBID_COL end
+  return SKIP_WANT_COL
+end
+
 function huntDrawCap(i, ch, x, a)
   local cell = { x = x, y = HUNT.y - HUNT_CAP / 2,
     w = HUNT_CAP_W, h = HUNT_CAP }
@@ -400,15 +516,20 @@ function huntDrawCap(i, ch, x, a)
     name = ch,
     unit = HUNT_CAP / KB_STD_H,
     color = huntCapColor(i),
+    halo = huntCapHalo(i),
     alpha = a
   })
 end
 
+-- The left edge of cap i in the row.
+function huntCapX(i)
+  local x0 = (REF_W - huntWaveWidth()) / 2
+  return x0 + (i - 1) * (HUNT_CAP_W + HUNT_CAP_GAP)
+end
+
 function huntDrawRow(a)
-  local x = (REF_W - huntWaveWidth()) / 2
   for i, ch in ipairs(HUNT.chars) do
-    huntDrawCap(i, ch, x, a)
-    x = x + HUNT_CAP_W + HUNT_CAP_GAP
+    huntDrawCap(i, ch, huntCapX(i), a)
   end
 end
 
@@ -440,14 +561,19 @@ function huntDraw()
   end
   huntDrawGround()
   huntDrawWave()
+  if HUNT.bang then drawBang(HUNT.bang) end
   drawWinGauge(HUNT.g, huntCfg().promote)
   huntDrawCount()
   fwDraw(HUNT)
   fkDrawExitHint()
 end
 
+function huntSceneEnter()
+  huntEnter(HUNT_SCENE)
+end
+
 registerScene("hunt", {
-  enter = huntEnter,
+  enter = huntSceneEnter,
   update = huntUpdate,
   draw = huntDraw,
   keypressed = huntKeypressed,

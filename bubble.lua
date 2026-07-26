@@ -32,8 +32,7 @@ end
 -- The radius grows linearly, reaching the inner ring at RIPE.
 
 function bubbleRadius(t)
-  local rate = (BUBBLE_RIPE_R - BUBBLE_R0) / BUBBLE_RIPE
-  return BUBBLE_R0 + rate * t
+  return BUBBLE_R0 + BUBBLE_RATE * t
 end
 
 -- The outer ring: the last moment a release still counts.

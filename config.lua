@@ -106,14 +106,15 @@ KEYSETS.press_tab = { "tab" }
 -- locale.lua.
 
 MENU_ORDER = {
-  "press", "find", "hunt", "alt", "words", "bubble"
+  "press", "find", "hunt", "alt", "words", "bubble", "skip"
 }
 
 -- Per-game notch at program start. Unlisted games start at 0.
 
 NOTCH_START = {
   hunt = -2,
-  bubble = -2
+  bubble = -2,
+  skip = -2
 }
 
 -- Typewriter welcome timing. The heading is a fixed Latin
@@ -358,7 +359,16 @@ BUBBLE_WINDOW[1] = 0.5
 
 BUBBLE_R0 = 8
 BUBBLE_RIPE_R = 52
+BUBBLE_RATE = (BUBBLE_RIPE_R - BUBBLE_R0) / BUBBLE_RIPE
 BUBBLE_FLY_T = 0.45
 BUBBLE_FLY_RISE = 70
 BUBBLE_POP_T = 0.3
 BUBBLE_POP_GROW = 0.6
+
+-- Skip the red ones: the falling caps come in two classes. The
+-- forbidden halo is full strength; the wanted one is
+-- deliberately fainter (its alpha is baked in), so a red cap
+-- reads first in a mixed row.
+
+SKIP_FORBID_COL = COL_RED
+SKIP_WANT_COL = { 0.16, 0.60, 0.32, 0.45 }

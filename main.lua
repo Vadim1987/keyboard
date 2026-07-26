@@ -78,6 +78,7 @@ SCENE_FILE.hunt = "hunt.lua"
 SCENE_FILE.alt = "alt.lua"
 SCENE_FILE.words = "words.lua"
 SCENE_FILE.bubble = "bubble.lua"
+SCENE_FILE.skip = "skip.lua"
 
 notchInit()
 inputInit()

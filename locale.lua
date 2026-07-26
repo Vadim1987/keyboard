@@ -27,7 +27,8 @@ LOCALE.en = {
     hunt = "Hunt the falling objects",
     alt = "Alt characters",
     words = "Words & phrases",
-    bubble = "Blow the bubble"
+    bubble = "Blow the bubble",
+    skip = "Skip the red ones"
   },
   help = {
     press = "Press the key that glows.\n\n"
@@ -51,7 +52,12 @@ LOCALE.en = {
     bubble = "Hold the key that glows to blow up the "
       .. "bubble.\nLet go while the bubble fits the ring.\n\n"
       .. "Shift+Esc  back to the menu\n"
-      .. "Ctrl+Alt+↑/↓  change difficulty"
+      .. "Ctrl+Alt+↑/↓  change difficulty",
+    skip = "Type the green keys before they land.\n"
+      .. "Leave the red ones alone.\n\n"
+      .. "Alt+P  pause\n"
+      .. "Shift+Esc  back to the menu\n"
+      .. "Ctrl+Alt+↑ faster   Ctrl+Alt+↓ slower"
   }
 }
 
