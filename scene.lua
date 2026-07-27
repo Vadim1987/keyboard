@@ -11,6 +11,18 @@ ACTIVE = nil
 SCENE_FILE = { }
 SCENE_LOADED = { }
 
+-- Files already dofile'd, by path. A game whose behaviour lives
+-- in a shared engine loads it with ensureFile at the top of its
+-- own file, so the engine arrives once however the child reaches
+-- it -- and a game never has to load another game to borrow it.
+LOADED_FILES = { }
+
+function ensureFile(file)
+  if LOADED_FILES[file] then return end
+  LOADED_FILES[file] = true
+  dofile(file)
+end
+
 MENU_INDEX = { }
 for i, id in ipairs(MENU_ORDER) do
   MENU_INDEX[id] = i
@@ -30,7 +42,7 @@ function ensureScene(id)
   if SCENE_LOADED[id] then return end
   local file = SCENE_FILE[id]
   if file then
-    dofile(file)
+    ensureFile(file)
     SCENE_LOADED[id] = true
   end
 end
