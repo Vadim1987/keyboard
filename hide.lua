@@ -50,9 +50,11 @@ end
 -- How far the cap has slid out, 0 hidden to 1 fully shown.
 
 function hideSlideFrac()
-  if PEEK.phase == "peek" then return 1 end
-  if PEEK.phase == "out" then return PEEK.t / HIDE_SLIDE end
-  if PEEK.phase == "in" then
+  if PEEK.phase == "peek" then
+    return 1
+  elseif PEEK.phase == "out" then
+    return PEEK.t / HIDE_SLIDE
+  elseif PEEK.phase == "in" then
     return 1 - PEEK.t / HIDE_SLIDE
   end
   return 0
