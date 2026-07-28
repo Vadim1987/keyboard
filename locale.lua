@@ -29,7 +29,8 @@ LOCALE.en = {
     words = "Words & phrases",
     bubble = "Blow the bubble",
     skip = "Skip the red ones",
-    hide = "Hide and seek"
+    hide = "Hide and seek",
+    train = "Load the train"
   },
   help = {
     press = "Press the key that glows.\n\n"
@@ -62,6 +63,11 @@ LOCALE.en = {
     hide = "A key peeks out from behind the crate.\n"
       .. "Press it while you see it, or from memory\n"
       .. "just after it hides.\n\n"
+      .. "Shift+Esc  back to the menu\n"
+      .. "Ctrl+Alt+↑/↓  change difficulty",
+    train = "Press the key floating over the flatcar.\n"
+      .. "It rides away as cargo and the train grows.\n"
+      .. "Take as long as you like.\n\n"
       .. "Shift+Esc  back to the menu\n"
       .. "Ctrl+Alt+↑/↓  change difficulty"
   }

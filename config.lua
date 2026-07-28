@@ -107,7 +107,7 @@ KEYSETS.press_tab = { "tab" }
 
 MENU_ORDER = {
   "press", "find", "hunt", "alt", "words", "bubble", "skip",
-  "hide"
+  "hide", "train"
 }
 
 -- Per-game notch at program start. Unlisted games start at 0.
@@ -116,7 +116,8 @@ NOTCH_START = {
   hunt = -2,
   bubble = -2,
   skip = -2,
-  hide = -2
+  hide = -2,
+  train = -2
 }
 
 -- Typewriter welcome timing. The heading is a fixed Latin
@@ -385,6 +386,19 @@ HILL = { 0.55, 0.72, 0.48 }
 GROUND = { 0.45, 0.62, 0.38 }
 WOOD = { 0.75, 0.54, 0.29 }
 WOOD_DARK = { 0.56, 0.37, 0.18 }
+IRON = { 0.18, 0.18, 0.18 }
+HUB = { 0.79, 0.79, 0.79 }
+BOILER = { 0.84, 0.27, 0.27 }
+CAB = { 0.24, 0.42, 0.70 }
+CAB_GLASS = { 0.75, 0.85, 0.95 }
+RAIL = { 0.42, 0.42, 0.45 }
+SLEEPER = { 0.47, 0.36, 0.24 }
+
+-- Sleeper pitch: the track is the busiest prop on a scene, so
+-- this is the knob if it ever costs too much.
+
+SLEEPER_GAP = 26
+SMOKE = { 0.85, 0.85, 0.85 }
 
 -- Hide and seek. A cap slides out from behind a crate, waits,
 -- then slides back; the child may press it while it shows or
@@ -422,3 +436,26 @@ HIDE_CRATE_X = 300
 HIDE_CRATE_U = 15
 HIDE_CAP_H = 96
 HIDE_CAP_LIP = 18
+
+-- Load the train. A cap hovers over the next flatcar; pressing
+-- it lowers the cap onto the deck and the car rolls in, so the
+-- train grows with every key learned. Type find on the
+-- press-count engine, for the youngest players, so there is no
+-- timer anywhere: the cap waits as long as the child needs.
+
+TRAIN_G = 10
+TRAIN_GTOP = 14
+TRAIN_LOAD = 0.4
+TRAIN_CARS = 5
+
+-- Scene geometry in reference pixels. The locomotive stands at
+-- the left; cars fill in to its right, and once TRAIN_CARS are
+-- coupled the oldest rolls off the front, so the train reads as
+-- long without running off the screen.
+
+TRAIN_GROUND_Y = 404
+TRAIN_U = 6
+TRAIN_LOCO_X = 96
+TRAIN_CAR_GAP = 14
+TRAIN_CAP_H = 60
+TRAIN_HOVER = 132
