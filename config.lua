@@ -106,7 +106,8 @@ KEYSETS.press_tab = { "tab" }
 -- locale.lua.
 
 MENU_ORDER = {
-  "press", "find", "hunt", "alt", "words", "bubble", "skip"
+  "press", "find", "hunt", "alt", "words", "bubble", "skip",
+  "hide"
 }
 
 -- Per-game notch at program start. Unlisted games start at 0.
@@ -114,7 +115,8 @@ MENU_ORDER = {
 NOTCH_START = {
   hunt = -2,
   bubble = -2,
-  skip = -2
+  skip = -2,
+  hide = -2
 }
 
 -- Typewriter welcome timing. The heading is a fixed Latin
@@ -372,3 +374,51 @@ BUBBLE_POP_GROW = 0.6
 
 SKIP_FORBID_COL = COL_RED
 SKIP_WANT_COL = { 0.16, 0.60, 0.32, 0.45 }
+
+-- Scenery palette for the prop games (Hide, and later Train and
+-- Asteroids). Kept beside the chrome palette so every color
+-- lives in one file; the props themselves are in props.lua.
+-- There is no sky color: the sky is the pastel background main
+-- already paints for the level.
+
+HILL = { 0.55, 0.72, 0.48 }
+GROUND = { 0.45, 0.62, 0.38 }
+WOOD = { 0.75, 0.54, 0.29 }
+WOOD_DARK = { 0.56, 0.37, 0.18 }
+
+-- Hide and seek. A cap slides out from behind a crate, waits,
+-- then slides back; the child may press it while it shows or
+-- from memory after it has gone. The notch shortens the peek
+-- and lengthens the memory window together, so a level asks
+-- for more memory and less looking.
+
+HIDE_G = 12
+HIDE_GTOP = 18
+HIDE_SLIDE = 0.35
+HIDE_GAP = 0.6
+
+-- Seconds the cap stays out, by notch.
+
+HIDE_PEEK = { }
+HIDE_PEEK[-2] = 2.4
+HIDE_PEEK[-1] = 1.8
+HIDE_PEEK[0] = 1.3
+HIDE_PEEK[1] = 0.9
+
+-- Seconds it can still be pressed after it has hidden.
+
+HIDE_MEMORY = { }
+HIDE_MEMORY[-2] = 1.2
+HIDE_MEMORY[-1] = 1.6
+HIDE_MEMORY[0] = 2.2
+HIDE_MEMORY[1] = 2.8
+
+-- Scene geometry in reference pixels. The crate sits on the
+-- ground line; the cap slides out to its right, keeping
+-- HIDE_LIP hidden so it reads as coming from behind.
+
+HIDE_GROUND_Y = 392
+HIDE_CRATE_X = 300
+HIDE_CRATE_U = 15
+HIDE_CAP_H = 96
+HIDE_CAP_LIP = 18

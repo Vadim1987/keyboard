@@ -28,7 +28,8 @@ LOCALE.en = {
     alt = "Alt characters",
     words = "Words & phrases",
     bubble = "Blow the bubble",
-    skip = "Skip the red ones"
+    skip = "Skip the red ones",
+    hide = "Hide and seek"
   },
   help = {
     press = "Press the key that glows.\n\n"
@@ -57,7 +58,12 @@ LOCALE.en = {
       .. "Leave the red ones alone.\n\n"
       .. "Alt+P  pause\n"
       .. "Shift+Esc  back to the menu\n"
-      .. "Ctrl+Alt+↑ faster   Ctrl+Alt+↓ slower"
+      .. "Ctrl+Alt+↑ faster   Ctrl+Alt+↓ slower",
+    hide = "A key peeks out from behind the crate.\n"
+      .. "Press it while you see it, or from memory\n"
+      .. "just after it hides.\n\n"
+      .. "Shift+Esc  back to the menu\n"
+      .. "Ctrl+Alt+↑/↓  change difficulty"
   }
 }
 
