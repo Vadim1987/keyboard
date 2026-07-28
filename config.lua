@@ -376,11 +376,19 @@ BUBBLE_POP_GROW = 0.6
 SKIP_FORBID_COL = COL_RED
 SKIP_WANT_COL = { 0.16, 0.60, 0.32, 0.45 }
 
--- Scenery palette for the prop games (Hide, and later Train and
+-- Scenery palette for the prop games (Hide, Train and later
 -- Asteroids). Kept beside the chrome palette so every color
 -- lives in one file; the props themselves are in props.lua.
--- There is no sky color: the sky is the pastel background main
--- already paints for the level.
+
+-- The sky over a scene reads the level as a time of day rather
+-- than as the chrome pastel, which would hang a green or yellow
+-- sky over green grass. One step per notch of the Press ladder.
+
+SKY_RAMP = { }
+SKY_RAMP[0] = { 0.75, 0.89, 0.97 }
+SKY_RAMP[1] = { 0.62, 0.83, 0.95 }
+SKY_RAMP[2] = { 0.96, 0.87, 0.70 }
+SKY_RAMP[3] = { 0.97, 0.71, 0.53 }
 
 HILL = { 0.55, 0.72, 0.48 }
 GROUND = { 0.45, 0.62, 0.38 }

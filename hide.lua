@@ -79,6 +79,8 @@ end
 function hideEnter()
   hideGoto("gap")
   fkEnter(HIDE, HIDE_CFG)
+  skyLevel(HIDE_CFG)
+  pastelSnap()
 end
 
 -- Phase ticks. Each returns the phase to enter next, or nil to
@@ -158,6 +160,7 @@ end
 function hideOnNotch(delta)
   hideGoto("gap")
   fkOnNotch(HIDE, HIDE_CFG, delta)
+  skyLevel(HIDE_CFG)
 end
 
 function hideDone()

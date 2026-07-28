@@ -9,6 +9,14 @@
 -- A prop is placed by its bottom-left corner and sized by a
 -- unit u, so a caller states position and scale in one call.
 
+-- A scene paints its own sky: the gauge has just set the chrome
+-- pastel for the level, and this replaces it with the matching
+-- sky. Call it after entering and after a notch change.
+
+function skyLevel(cfg)
+  pastelSetTarget(SKY_RAMP[notchGet(cfg.id) - cfg.lo])
+end
+
 -- Rolling hills along the ground line: three flattened
 -- ellipses, widest first, so the band reads as depth.
 

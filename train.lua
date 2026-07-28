@@ -68,6 +68,8 @@ end
 function trainEnter()
   trainReset()
   fkEnter(TRAIN, TRAIN_CFG)
+  skyLevel(TRAIN_CFG)
+  pastelSnap()
 end
 
 -- Coupling a car: the newest key joins the row, and once the
@@ -117,6 +119,7 @@ end
 function trainOnNotch(delta)
   trainReset()
   fkOnNotch(TRAIN, TRAIN_CFG, delta)
+  skyLevel(TRAIN_CFG)
 end
 
 function trainDone()
