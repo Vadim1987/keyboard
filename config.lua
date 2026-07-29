@@ -107,7 +107,7 @@ KEYSETS.press_tab = { "tab" }
 
 MENU_ORDER = {
   "press", "find", "hunt", "alt", "words", "bubble", "skip",
-  "hide", "train"
+  "hide", "train", "astro"
 }
 
 -- Per-game notch at program start. Unlisted games start at 0.
@@ -117,7 +117,8 @@ NOTCH_START = {
   bubble = -2,
   skip = -2,
   hide = -2,
-  train = -2
+  train = -2,
+  astro = -2
 }
 
 -- Typewriter welcome timing. The heading is a fixed Latin
@@ -389,6 +390,49 @@ SKY_RAMP[0] = { 0.75, 0.89, 0.97 }
 SKY_RAMP[1] = { 0.62, 0.83, 0.95 }
 SKY_RAMP[2] = { 0.96, 0.87, 0.70 }
 SKY_RAMP[3] = { 0.97, 0.71, 0.53 }
+
+-- Deep space over the Asteroids scene: the same idea one notch
+-- wider, from a calm night to a hot nebula. Five steps, since
+-- the falling-caps games run the full -2..+2 ladder.
+
+SPACE_RAMP = { }
+SPACE_RAMP[0] = { 0.09, 0.11, 0.20 }
+SPACE_RAMP[1] = { 0.11, 0.10, 0.24 }
+SPACE_RAMP[2] = { 0.17, 0.10, 0.26 }
+SPACE_RAMP[3] = { 0.24, 0.10, 0.24 }
+SPACE_RAMP[4] = { 0.30, 0.10, 0.18 }
+
+-- Asteroids palette: rock, hull, dome, and the lamps that show
+-- the charge. A dark lamp is the gun still reloading.
+
+STAR = { 1, 1, 1 }
+ROCK = { 0.54, 0.54, 0.58 }
+ROCK_LIT = { 0.65, 0.65, 0.69 }
+HULL = { 0.29, 0.56, 0.83 }
+DOME = { 0.75, 0.89, 0.98 }
+LAMP = { 0.96, 0.77, 0.26 }
+LAMP_OFF = { 0.35, 0.33, 0.28 }
+BOLT = { 0.95, 0.35, 0.30 }
+
+-- Asteroids. The gun reloads after every shot; a blank costs
+-- longer than a hit, so hammering every key keeps the gun cold
+-- and looking first is the cheaper move. Times are tuned on
+-- device.
+
+ASTRO_RELOAD_HIT = 0.35
+ASTRO_RELOAD_MISS = 0.9
+ASTRO_BOLT_T = 0.18
+ASTRO_SHAKE_T = 0.4
+ASTRO_SHAKE_PX = 9
+
+-- Scene geometry in reference pixels. Rocks keep clear of the
+-- edges; the ship rides above the floor the engine drops caps
+-- to, so a rock that lands has reached it.
+
+ASTRO_MARGIN = 40
+ASTRO_GROUND_Y = 486
+ASTRO_SHIP_U = 5
+ASTRO_STARS = 60
 
 HILL = { 0.55, 0.72, 0.48 }
 GROUND = { 0.45, 0.62, 0.38 }

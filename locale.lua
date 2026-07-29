@@ -30,7 +30,8 @@ LOCALE.en = {
     bubble = "Blow the bubble",
     skip = "Skip the red ones",
     hide = "Hide and seek",
-    train = "Load the train"
+    train = "Load the train",
+    astro = "Asteroids"
   },
   help = {
     press = "Press the key that glows.\n\n"
@@ -69,7 +70,13 @@ LOCALE.en = {
       .. "It rides away as cargo and the train grows.\n"
       .. "Take as long as you like.\n\n"
       .. "Shift+Esc  back to the menu\n"
-      .. "Ctrl+Alt+↑/↓  change difficulty"
+      .. "Ctrl+Alt+↑/↓  change difficulty",
+    astro = "Shoot the falling rocks by typing their\n"
+      .. "keys, in any order. The gun reloads after\n"
+      .. "every shot, and a miss reloads slower.\n\n"
+      .. "Alt+P  pause\n"
+      .. "Shift+Esc  back to the menu\n"
+      .. "Ctrl+Alt+↑ faster   Ctrl+Alt+↓ slower"
   }
 }
 

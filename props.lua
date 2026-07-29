@@ -162,3 +162,85 @@ function drawSmoke(x, y, t)
     smokePuff(x, y, i, t)
   end
 end
+
+-- Star field: positions come from the index alone, so the sky
+-- is fixed and never shimmers between frames.
+
+function starAt(i, w, h)
+  return (i * 73.7) % w, (i * 41.3) % (h * 0.8)
+end
+
+function drawStars(w, h, n)
+  gfx.setColor(STAR[1], STAR[2], STAR[3])
+  for i = 1, n do
+    local x, y = starAt(i, w, h)
+    gfx.circle("fill", x, y, (i % 3) * 0.4 + 0.7)
+  end
+end
+
+-- An asteroid: an eight-point polygon whose radii are jittered
+-- from a seed, so every rock has its own outline. The lit core
+-- is left plain, which is what a cap sits on.
+
+function rockPoints(cx, cy, r, seed)
+  local pts = { }
+  for i = 0, 7 do
+    local a = i * math.pi / 4
+    local j = 1 + 0.18 * math.sin(seed + i * 2.4)
+    pts[#pts + 1] = cx + math.cos(a) * r * j
+    pts[#pts + 1] = cy + math.sin(a) * r * j
+  end
+  return pts
+end
+
+function drawRock(cx, cy, r, seed)
+  gfx.setColor(ROCK[1], ROCK[2], ROCK[3])
+  gfx.polygon("fill", rockPoints(cx, cy, r, seed))
+  gfx.setColor(ROCK_LIT[1], ROCK_LIT[2], ROCK_LIT[3])
+  gfx.polygon("fill", rockPoints(cx, cy, r * 0.72, seed))
+end
+
+-- The saucer's three lamps ARE the charge meter: they go out on
+-- a shot and light again one by one, so a child sees at a
+-- glance whether the gun is ready. frac is 0 to 1.
+
+SHIP_LAMPS = 3
+
+function shipLamp(cx, cy, u, i)
+  gfx.circle("fill", cx + (i - 2) * 5.5 * u,
+    cy + ((i == 2) and 1 or 0.5) * u, 0.75 * u)
+end
+
+function shipLamps(cx, cy, u, frac)
+  for i = 1, SHIP_LAMPS do
+    if frac >= i / SHIP_LAMPS then
+      gfx.setColor(LAMP[1], LAMP[2], LAMP[3])
+    else
+      gfx.setColor(LAMP_OFF[1], LAMP_OFF[2], LAMP_OFF[3])
+    end
+    shipLamp(cx, cy, u, i)
+  end
+end
+
+function drawShip(cx, cy, u, frac)
+  gfx.setColor(HULL[1], HULL[2], HULL[3])
+  gfx.ellipse("fill", cx, cy, 8 * u, 2.2 * u)
+  gfx.setColor(DOME[1], DOME[2], DOME[3])
+  gfx.ellipse("fill", cx, cy - 2.4 * u, 3.2 * u, 2.4 * u)
+  shipLamps(cx, cy, u, frac)
+end
+
+-- The charge glow under the hull brightens with the lamps, so
+-- readiness reads as brightness as well as a count. Rings are
+-- drawn outward first, so the faintest sits behind.
+
+CHARGE_RINGS = 3
+
+function drawCharge(cx, cy, u, frac)
+  for i = CHARGE_RINGS, 1, -1 do
+    gfx.setColor(DOME[1], DOME[2], DOME[3],
+      frac * 0.3 * (1 - (i - 1) / CHARGE_RINGS))
+    gfx.ellipse("fill", cx, cy, (8 + i * 1.6) * u,
+      (2.2 + i * 1.1) * u)
+  end
+end
