@@ -30,6 +30,8 @@ GUN = { charge = 0, full = ASTRO_RELOAD_HIT, bolt = nil,
   shake = 0 }
 
 ASTRO_ROCK_R = HUNT_CAP_W * 0.82
+ASTRO_ROCK_D = ASTRO_ROCK_R * 2
+ASTRO_ROCK_INSET = (ASTRO_ROCK_D - HUNT_CAP_W) / 2
 ASTRO_SHIP_Y = ASTRO_GROUND_Y - 4 * ASTRO_SHIP_U
 
 function astroEnter()
@@ -42,15 +44,17 @@ function astroEnter()
   pastelSnap()
 end
 
--- Rocks are spread one to a sector, so they never overlap, and
+-- Rocks are spread one to a sector so they never overlap, and
 -- the offset inside a sector comes from the wave count, so each
--- wave falls in its own arrangement.
+-- wave falls in its own arrangement. The sector holds the ROCK,
+-- which is wider than the cap riding it -- spacing them by cap
+-- width would let neighbouring rocks touch.
 
 function astroCapX(i, n)
   local span = (REF_W - 2 * ASTRO_MARGIN) / n
   local jitter = (math.sin(HUNT.count * 3 + i) + 1) / 2
   return ASTRO_MARGIN + (i - 1) * span
-    + jitter * (span - HUNT_CAP_W)
+    + jitter * (span - ASTRO_ROCK_D) + ASTRO_ROCK_INSET
 end
 
 function astroReady()
