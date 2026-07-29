@@ -37,7 +37,7 @@ PEEK = { phase = "gap", t = 0 }
 -- they are derived once here rather than per frame.
 
 HIDE_CAP_W = HIDE_CAP_H * KB_STD_W / KB_STD_H
-HIDE_CRATE_R = HIDE_CRATE_X + 10 * HIDE_CRATE_U
+HIDE_CRATE_TRAVEL = HIDE_CAP_W - HIDE_CAP_LIP
 
 function hidePeekTime()
   return HIDE_PEEK[notchGet("hide")]
@@ -169,13 +169,16 @@ end
 
 -- Drawing
 
--- The cap slides right from behind the crate. At frac 0 it sits
--- wholly behind it; at 1 all but HIDE_CAP_LIP is clear, so it
--- still reads as coming from behind rather than standing free.
+-- The cap slides LEFT from behind the crate. It leads with its
+-- left edge because that is where the engraving sits, as on a
+-- real key: sliding the other way would keep the letter hidden
+-- until the very end of the slide. At frac 0 the cap sits
+-- wholly behind the crate; at 1 all but HIDE_CAP_LIP is clear,
+-- so it still reads as coming from behind rather than standing
+-- free.
 
 function hideCapX(frac)
-  local travel = HIDE_CAP_W - HIDE_CAP_LIP
-  return HIDE_CRATE_R - HIDE_CAP_W + frac * travel
+  return HIDE_CRATE_X - frac * HIDE_CRATE_TRAVEL
 end
 
 function hideCapCell()
