@@ -20,7 +20,7 @@ ensureFile("props.lua")
 HIDE = { burst = nil, wrong = nil, fw = { } }
 HIDE_CFG = {
   id = "hide",
-  notch = PRESS_NOTCH,
+  notch = SCENE_NOTCH,
   lo = PRESS_LO,
   hi = PRESS_HI,
   g = HIDE_G,

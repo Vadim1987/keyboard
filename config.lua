@@ -143,6 +143,19 @@ PRESS_NOTCH[-1] = { add = { "bottom_row" } }
 PRESS_NOTCH[0] = { add = { "top_row", "press_enter_back" } }
 PRESS_NOTCH[1] = { add = { "numbers", "press_tab" } }
 
+-- The scene games set the cap on a prop, where it is drawn at
+-- one fixed width. Space and the service keys are wide on the
+-- real board and are known by that shape, so a fixed-width cap
+-- shows space as a blank slab nobody can read. They stay in the
+-- keyboard games, which draw the board; the scenes teach the
+-- letters and digits. Same ladder otherwise.
+
+SCENE_NOTCH = { }
+SCENE_NOTCH[-2] = { add = { "home_row" } }
+SCENE_NOTCH[-1] = { add = { "bottom_row" } }
+SCENE_NOTCH[0] = { add = { "top_row" } }
+SCENE_NOTCH[1] = { add = { "numbers" } }
+
 -- Press-count learning engine (gauge.lua). G is the review
 -- FLOOR: a level needs max(G, its mandatory count) first-try
 -- hits, so the gauge always covers every new glyph (the reserve

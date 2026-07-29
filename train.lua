@@ -19,7 +19,7 @@ ensureFile("props.lua")
 TRAIN = { burst = nil, wrong = nil, fw = { } }
 TRAIN_CFG = {
   id = "train",
-  notch = PRESS_NOTCH,
+  notch = SCENE_NOTCH,
   lo = PRESS_LO,
   hi = PRESS_HI,
   g = TRAIN_G,
