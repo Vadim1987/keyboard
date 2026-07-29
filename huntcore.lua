@@ -70,6 +70,21 @@ function huntCfg()
 end
 
 -- The pastel ramp level for the current notch (above floor).
+-- Paint the background for the current level. A game may bring
+-- its own ramp -- Asteroids plays in space, where the chrome
+-- pastel would be wrong -- and the rest use the pastel. Called
+-- wherever the level or the wave changes, so a scene never has
+-- to repaint behind the engine.
+
+function huntPaintSky()
+  local ramp = HUNT_GAME.ramp
+  if ramp then
+    pastelSetTarget(ramp[huntColorLevel()])
+  else
+    pastelLevel(huntColorLevel())
+  end
+end
+
 function huntColorLevel()
   return notchGet(HUNT_GAME.id) - HUNT_GAME.lo
 end
@@ -186,7 +201,7 @@ function huntSpawn()
   HUNT.fall = cfg.fall
   HUNT.phase = "fall"
   HUNT.anim = 0
-  pastelLevel(huntColorLevel())
+  huntPaintSky()
 end
 
 function huntEnter(game)
@@ -198,7 +213,7 @@ function huntEnter(game)
   HUNT.prev = { }
   HUNT.count = 0
   HUNT.fw = { }
-  pastelLevel(huntColorLevel())
+  huntPaintSky()
   pastelSnap()
   huntSpawn()
 end
@@ -453,7 +468,7 @@ function huntOnNotch(delta)
   local old = notchGet(HUNT_GAME.id)
   notchShift(HUNT_GAME.id, delta, HUNT_GAME.lo, HUNT_GAME.hi)
   if notchGet(HUNT_GAME.id) == old then return end
-  pastelLevel(huntColorLevel())
+  huntPaintSky()
   if huntDone() then
     huntReplay()
     return

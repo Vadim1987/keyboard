@@ -19,7 +19,8 @@
 ensureFile("huntcore.lua")
 ensureFile("props.lua")
 
-ASTRO_SCENE = { id = "astro", lo = -2, hi = 2, forbid = false }
+ASTRO_SCENE = { id = "astro", lo = -2, hi = 2, forbid = false,
+  ramp = SPACE_RAMP }
 
 -- charge: seconds left before the gun is ready; full: how long
 -- the current reload runs, so the lamps fill over it. bolt: the
@@ -41,8 +42,6 @@ function astroEnter()
   GUN.bursts = { }
   GUN.shake = 0
   huntEnter(ASTRO_SCENE)
-  pastelSetTarget(SPACE_RAMP[huntColorLevel()])
-  pastelSnap()
 end
 
 -- Rocks are spread one to a sector so they never overlap, and
@@ -164,7 +163,6 @@ function astroOnNotch(delta)
   GUN.bolt = nil
   GUN.bursts = { }
   huntOnNotch(delta)
-  pastelSetTarget(SPACE_RAMP[huntColorLevel()])
 end
 
 function astroDone()
