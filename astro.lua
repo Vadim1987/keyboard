@@ -27,7 +27,7 @@ ASTRO_SCENE = { id = "astro", lo = -2, hi = 2, forbid = false }
 -- ship recoiling from a rock that got through.
 
 GUN = { charge = 0, full = ASTRO_RELOAD_HIT, bolt = nil,
-  shake = 0 }
+  bursts = { }, shake = 0 }
 
 ASTRO_ROCK_R = HUNT_CAP_W * 0.82
 ASTRO_ROCK_D = ASTRO_ROCK_R * 2
@@ -38,6 +38,7 @@ function astroEnter()
   GUN.charge = 0
   GUN.full = ASTRO_RELOAD_HIT
   GUN.bolt = nil
+  GUN.bursts = { }
   GUN.shake = 0
   huntEnter(ASTRO_SCENE)
   pastelSetTarget(SPACE_RAMP[huntColorLevel()])
@@ -72,8 +73,17 @@ function astroReload(time)
   GUN.full = time
 end
 
+-- The beam aims at where the rock stood when the trigger went,
+-- not at where the wave has drifted to since, so it always
+-- points at the rock it struck.
+
 function astroShoot(i)
-  GUN.bolt = { i = i, t = ASTRO_BOLT_T }
+  local cell = astroCapCell(i, #HUNT.chars)
+  GUN.bolt = {
+    x = cell.x + HUNT_CAP_W / 2,
+    y = cell.y + HUNT_CAP / 2,
+    t = ASTRO_BOLT_T
+  }
   astroReload(ASTRO_RELOAD_HIT)
 end
 
@@ -98,6 +108,37 @@ function astroKeypressed(k)
   end
 end
 
+-- A wave that lands is a breach of the line, not a blow to the
+-- saucer: rocks come down across the whole width and only one
+-- near the middle could ever strike it. Every rock still
+-- standing bursts where it crossed, and the ship rocks from the
+-- shock of the line giving way.
+
+function astroBurstAt(i, n)
+  local cell = astroCapCell(i, n)
+  GUN.bursts[#GUN.bursts + 1] = {
+    x = cell.x + HUNT_CAP_W / 2,
+    y = cell.y + HUNT_CAP / 2,
+    t = BANG_T
+  }
+end
+
+function astroBreach()
+  local n = #HUNT.chars
+  for i = 1, n do
+    if not HUNT.done[i] then astroBurstAt(i, n) end
+  end
+  GUN.shake = ASTRO_SHAKE_T
+end
+
+function astroTickBursts(dt)
+  for i = #GUN.bursts, 1, -1 do
+    local b = GUN.bursts[i]
+    b.t = b.t - dt
+    if b.t <= 0 then table.remove(GUN.bursts, i) end
+  end
+end
+
 function astroTickGun(dt)
   GUN.charge = math.max(0, GUN.charge - dt)
   GUN.shake = math.max(0, GUN.shake - dt)
@@ -113,13 +154,15 @@ function astroUpdate(dt)
   local was = HUNT.phase
   huntUpdate(dt)
   if was == "fall" and HUNT.phase == "missed" then
-    GUN.shake = ASTRO_SHAKE_T
+    astroBreach()
   end
   astroTickGun(dt)
+  astroTickBursts(dt)
 end
 
 function astroOnNotch(delta)
   GUN.bolt = nil
+  GUN.bursts = { }
   huntOnNotch(delta)
   pastelSetTarget(SPACE_RAMP[huntColorLevel()])
 end
@@ -168,13 +211,17 @@ end
 -- The beam from the ship to the rock it struck.
 
 function astroDrawBolt(sx)
-  local x = astroCapX(GUN.bolt.i, #HUNT.chars)
   gfx.setColor(BOLT[1], BOLT[2], BOLT[3],
     GUN.bolt.t / ASTRO_BOLT_T)
   gfx.setLineWidth(4)
-  gfx.line(sx, ASTRO_SHIP_Y, x + HUNT_CAP_W / 2,
-    HUNT.y + HUNT_CAP / 2)
+  gfx.line(sx, ASTRO_SHIP_Y, GUN.bolt.x, GUN.bolt.y)
   gfx.setLineWidth(1)
+end
+
+function astroDrawBursts()
+  for _, b in ipairs(GUN.bursts) do
+    drawBang(b)
+  end
 end
 
 function astroDrawShip(sx)
@@ -190,6 +237,7 @@ function astroDrawScene()
   local sx = astroShipX()
   drawStars(REF_W, REF_H, ASTRO_STARS)
   astroDrawWave()
+  astroDrawBursts()
   if GUN.bolt then astroDrawBolt(sx) end
   astroDrawShip(sx)
 end
