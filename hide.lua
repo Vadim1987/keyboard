@@ -205,7 +205,7 @@ end
 
 function hideDraw()
   if hideDone() then
-    fkDrawDoneScreen()
+    fkDrawLevelScreen(fkLevelTabLabel(HIDE_CFG))
     fwDraw(HIDE)
     return
   end

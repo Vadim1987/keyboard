@@ -185,7 +185,7 @@ end
 
 function trainDraw()
   if trainDone() then
-    fkDrawDoneScreen()
+    fkDrawLevelScreen(fkLevelTabLabel(TRAIN_CFG))
     fwDraw(TRAIN)
     return
   end
